@@ -1,5 +1,5 @@
 "use client";
-import react, { use, useState } from "react";
+import react, { useState } from "react";
 
 const Page = () => {
   // useState variable for indicate whether should label O or X
@@ -26,6 +26,33 @@ const Page = () => {
   //useStatee for the game status
   const [gameStatus, setGameStatus] = useState("");
 
+  //useState for showing restart button
+  const [restartButton, setRestartButton] = useState(
+    <button
+      className="bg-green-400 px-2 cursor-pointer rounded-sm"
+      onClick={() => {
+        setFirstTB("");
+        setSecondTB("");
+        setThirdTB("");
+        setForthTB("");
+        setFifthTB("");
+        setSixthTB("");
+        setSeventhTB("");
+        setEighthTB("");
+        setNinthTB("");
+        setXOStatus("O");
+        setGameStatus("");
+      }}
+    >
+      Play Again
+    </button>
+  );
+
+  /*useState for showing message when the game is end 
+  show O won, X won, or draw
+  */
+  const [gameEndMessage, setGameEndMessage] = useState("");
+
   //function for setting the first table value
   function changeFirstTable() {
     if (XOStatus == "O" && firstTB == "" && gameStatus == "") {
@@ -38,7 +65,22 @@ const Page = () => {
         (fifthTB == "O" && ninthTB == "O") ||
         (forthTB == "O" && sevenTB == "O")
       ) {
-        setGameStatus("end");
+        setGameStatus("O won");
+      }
+
+      /*if all the other tables is filled, the game is draw */
+      if (
+        firstTB != "" &&
+        secondTB != "" &&
+        thirdTB != "" &&
+        forthTB != "" &&
+        fifthTB != "" &&
+        sixthTB != "" &&
+        sevenTB != "" &&
+        eigthTB != "" &&
+        ninthTB != ""
+      ) {
+        setGameStatus("draw");
       }
 
       setXOStatus("X");
@@ -52,7 +94,22 @@ const Page = () => {
         (fifthTB == "X" && ninthTB == "X") ||
         (forthTB == "X" && sevenTB == "X")
       ) {
-        setGameStatus("end");
+        setGameStatus("X won");
+      }
+
+      /*if all the other tables is filled, the game is draw */
+      if (
+        firstTB != "" &&
+        secondTB != "" &&
+        thirdTB != "" &&
+        forthTB != "" &&
+        fifthTB != "" &&
+        sixthTB != "" &&
+        sevenTB != "" &&
+        eigthTB != "" &&
+        ninthTB != ""
+      ) {
+        setGameStatus("draw");
       }
       setXOStatus("O");
     } else {
@@ -70,7 +127,22 @@ const Page = () => {
         (firstTB == "O" && thirdTB == "O") ||
         (fifthTB == "O" && eigthTB == "O")
       ) {
-        setGameStatus("end");
+        setGameStatus("O won");
+      }
+
+      /*if all the other tables is filled, the game is draw */
+      if (
+        firstTB != "" &&
+        secondTB != "" &&
+        thirdTB != "" &&
+        forthTB != "" &&
+        fifthTB != "" &&
+        sixthTB != "" &&
+        sevenTB != "" &&
+        eigthTB != "" &&
+        ninthTB != ""
+      ) {
+        setGameStatus("draw");
       }
 
       setXOStatus("X");
@@ -83,8 +155,24 @@ const Page = () => {
         (firstTB == "X" && thirdTB == "X") ||
         (fifthTB == "X" && eigthTB == "X")
       ) {
-        setGameStatus("end");
+        setGameStatus("X won");
       }
+
+      /*if all the other tables is filled, the game is draw */
+      if (
+        firstTB != "" &&
+        secondTB != "" &&
+        thirdTB != "" &&
+        forthTB != "" &&
+        fifthTB != "" &&
+        sixthTB != "" &&
+        sevenTB != "" &&
+        eigthTB != "" &&
+        ninthTB != ""
+      ) {
+        setGameStatus("draw");
+      }
+
       setXOStatus("O");
     } else {
     }
@@ -102,7 +190,22 @@ const Page = () => {
         (sixthTB == "O" && ninthTB == "O") ||
         (fifthTB == "O" && sevenTB == "O")
       ) {
-        setGameStatus("end");
+        setGameStatus("O won");
+      }
+
+      /*if all the other tables is filled, the game is draw */
+      if (
+        firstTB != "" &&
+        secondTB != "" &&
+        thirdTB != "" &&
+        forthTB != "" &&
+        fifthTB != "" &&
+        sixthTB != "" &&
+        sevenTB != "" &&
+        eigthTB != "" &&
+        ninthTB != ""
+      ) {
+        setGameStatus("draw");
       }
 
       setXOStatus("X");
@@ -116,7 +219,22 @@ const Page = () => {
         (sixthTB == "X" && ninthTB == "X") ||
         (fifthTB == "X" && sevenTB == "X")
       ) {
-        setGameStatus("end");
+        setGameStatus("X won");
+      }
+
+      /*if all the other tables is filled, the game is draw */
+      if (
+        firstTB != "" &&
+        secondTB != "" &&
+        thirdTB != "" &&
+        forthTB != "" &&
+        fifthTB != "" &&
+        sixthTB != "" &&
+        sevenTB != "" &&
+        eigthTB != "" &&
+        ninthTB != ""
+      ) {
+        setGameStatus("draw");
       }
 
       setXOStatus("O");
@@ -135,7 +253,22 @@ const Page = () => {
         (firstTB == "O" && sevenTB == "O") ||
         (fifthTB == "O" && sixthTB == "O")
       ) {
-        setGameStatus("end");
+        setGameStatus("O won");
+      }
+
+      /*if all the other tables is filled, the game is draw */
+      if (
+        firstTB != "" &&
+        secondTB != "" &&
+        thirdTB != "" &&
+        forthTB != "" &&
+        fifthTB != "" &&
+        sixthTB != "" &&
+        sevenTB != "" &&
+        eigthTB != "" &&
+        ninthTB != ""
+      ) {
+        setGameStatus("draw");
       }
 
       setXOStatus("X");
@@ -148,7 +281,22 @@ const Page = () => {
         (firstTB == "x" && sevenTB == "X") ||
         (fifthTB == "X" && sixthTB == "X")
       ) {
-        setGameStatus("end");
+        setGameStatus("X won");
+      }
+
+      /*if all the other tables is filled, the game is draw */
+      if (
+        firstTB != "" &&
+        secondTB != "" &&
+        thirdTB != "" &&
+        forthTB != "" &&
+        fifthTB != "" &&
+        sixthTB != "" &&
+        sevenTB != "" &&
+        eigthTB != "" &&
+        ninthTB != ""
+      ) {
+        setGameStatus("draw");
       }
 
       setXOStatus("O");
@@ -169,7 +317,22 @@ const Page = () => {
         (secondTB == "O" && eigthTB == "O") ||
         (forthTB == "O" && sixthTB == "O")
       ) {
-        setGameStatus("end");
+        setGameStatus("O won");
+      }
+
+      /*if all the other tables is filled, the game is draw */
+      if (
+        firstTB != "" &&
+        secondTB != "" &&
+        thirdTB != "" &&
+        forthTB != "" &&
+        fifthTB != "" &&
+        sixthTB != "" &&
+        sevenTB != "" &&
+        eigthTB != "" &&
+        ninthTB != ""
+      ) {
+        setGameStatus("draw");
       }
 
       setXOStatus("X");
@@ -184,8 +347,24 @@ const Page = () => {
         (secondTB == "X" && eigthTB == "X") ||
         (forthTB == "X" && sixthTB == "X")
       ) {
-        setGameStatus("end");
+        setGameStatus("X won");
       }
+
+      /*if all the other tables is filled, the game is draw */
+      if (
+        firstTB != "" &&
+        secondTB != "" &&
+        thirdTB != "" &&
+        forthTB != "" &&
+        fifthTB != "" &&
+        sixthTB != "" &&
+        sevenTB != "" &&
+        eigthTB != "" &&
+        ninthTB != ""
+      ) {
+        setGameStatus("draw");
+      }
+
       setXOStatus("O");
     } else {
     }
@@ -201,7 +380,22 @@ const Page = () => {
         (thirdTB == "O" && ninthTB == "O") ||
         (forthTB == "O" && fifthTB == "O")
       ) {
-        setGameStatus("end");
+        setGameStatus("O won");
+      }
+
+      /*if all the other tables is filled, the game is draw */
+      if (
+        firstTB != "" &&
+        secondTB != "" &&
+        thirdTB != "" &&
+        forthTB != "" &&
+        fifthTB != "" &&
+        sixthTB != "" &&
+        sevenTB != "" &&
+        eigthTB != "" &&
+        ninthTB != ""
+      ) {
+        setGameStatus("draw");
       }
 
       setXOStatus("X");
@@ -214,7 +408,22 @@ const Page = () => {
         (thirdTB == "X" && ninthTB == "X") ||
         (forthTB == "X" && fifthTB == "X")
       ) {
-        setGameStatus("end");
+        setGameStatus("X won");
+      }
+
+      /*if all the other tables is filled, the game is draw */
+      if (
+        firstTB != "" &&
+        secondTB != "" &&
+        thirdTB != "" &&
+        forthTB != "" &&
+        fifthTB != "" &&
+        sixthTB != "" &&
+        sevenTB != "" &&
+        eigthTB != "" &&
+        ninthTB != ""
+      ) {
+        setGameStatus("draw");
       }
 
       setXOStatus("O");
@@ -233,7 +442,22 @@ const Page = () => {
         (eigthTB == "O" && ninthTB == "O") ||
         (fifthTB == "O" && thirdTB == "O")
       ) {
-        setGameStatus("end");
+        setGameStatus("O won");
+      }
+
+      /*if all the other tables is filled, the game is draw */
+      if (
+        firstTB != "" &&
+        secondTB != "" &&
+        thirdTB != "" &&
+        forthTB != "" &&
+        fifthTB != "" &&
+        sixthTB != "" &&
+        sevenTB != "" &&
+        eigthTB != "" &&
+        ninthTB != ""
+      ) {
+        setGameStatus("draw");
       }
 
       setXOStatus("X");
@@ -246,7 +470,22 @@ const Page = () => {
         (eigthTB == "X" && ninthTB == "X") ||
         (fifthTB == "X" && thirdTB == "X")
       ) {
-        setGameStatus("end");
+        setGameStatus("X won");
+      }
+
+      /*if all the other tables is filled, the game is draw */
+      if (
+        firstTB != "" &&
+        secondTB != "" &&
+        thirdTB != "" &&
+        forthTB != "" &&
+        fifthTB != "" &&
+        sixthTB != "" &&
+        sevenTB != "" &&
+        eigthTB != "" &&
+        ninthTB != ""
+      ) {
+        setGameStatus("draw");
       }
 
       setXOStatus("O");
@@ -264,7 +503,22 @@ const Page = () => {
         (secondTB == "O" && fifthTB == "O") ||
         (sevenTB == "O" && ninthTB == "O")
       ) {
-        setGameStatus("end");
+        setGameStatus("O won");
+      }
+
+      /*if all the other tables is filled, the game is draw */
+      if (
+        firstTB != "" &&
+        secondTB != "" &&
+        thirdTB != "" &&
+        forthTB != "" &&
+        fifthTB != "" &&
+        sixthTB != "" &&
+        sevenTB != "" &&
+        eigthTB != "" &&
+        ninthTB != ""
+      ) {
+        setGameStatus("draw");
       }
 
       setXOStatus("X");
@@ -276,8 +530,24 @@ const Page = () => {
         (secondTB == "X" && fifthTB == "X") ||
         (sevenTB == "X" && ninthTB == "X")
       ) {
-        setGameStatus("end");
+        setGameStatus("X won");
       }
+
+      /*if all the other tables is filled, the game is draw */
+      if (
+        firstTB != "" &&
+        secondTB != "" &&
+        thirdTB != "" &&
+        forthTB != "" &&
+        fifthTB != "" &&
+        sixthTB != "" &&
+        sevenTB != "" &&
+        eigthTB != "" &&
+        ninthTB != ""
+      ) {
+        setGameStatus("draw");
+      }
+
       setXOStatus("O");
     } else {
     }
@@ -294,8 +564,24 @@ const Page = () => {
         (thirdTB == "O" && sixthTB == "O") ||
         (sevenTB == "O" && eigthTB == "O")
       ) {
-        setGameStatus("end");
+        setGameStatus("O won");
       }
+
+      /*if all the other tables is filled, the game is draw */
+      if (
+        firstTB != "" &&
+        secondTB != "" &&
+        thirdTB != "" &&
+        forthTB != "" &&
+        fifthTB != "" &&
+        sixthTB != "" &&
+        sevenTB != "" &&
+        eigthTB != "" &&
+        ninthTB != ""
+      ) {
+        setGameStatus("draw");
+      }
+
       setXOStatus("X");
     } else if (XOStatus == "X" && ninthTB == "" && gameStatus == "") {
       setNinthTB("X");
@@ -306,36 +592,76 @@ const Page = () => {
         (thirdTB == "X" && sixthTB == "X") ||
         (sevenTB == "X" && eigthTB == "X")
       ) {
-        setGameStatus("end");
+        setGameStatus("X won");
       }
+
+      /*if all the other tables is filled, the game is draw */
+      if (
+        firstTB != "" &&
+        secondTB != "" &&
+        thirdTB != "" &&
+        forthTB != "" &&
+        fifthTB != "" &&
+        sixthTB != "" &&
+        sevenTB != "" &&
+        eigthTB != "" &&
+        ninthTB != ""
+      ) {
+        setGameStatus("draw");
+        console.log(gameStatus);
+      }
+
+      //
+
       setXOStatus("O");
     } else {
     }
   }
 
+  console.log(gameStatus);
   return (
-    <div className="w-svw h-svh flex justify-center items-center">
-
-      <table className="border table-fixed w-[18rem] h-[18rem] sm:w-sm sm:h-[24rem] md:w-md md:h-[28rem] lg:w-lg lg:h-[32rem] xl:w-xl xl:h-[36rem] 2xl:w-2xl 2xl:h-[42rem]">
-        <tbody className="[&>tr>td]:border [&>tr>td]:text-center">
-          <tr className="h-1/3">
-            <td onClick={changeFirstTable}>{firstTB}</td>
-            <td onClick={changeSecondTable}>{secondTB}</td>
-            <td onClick={changeThirdTable}>{thirdTB}</td>
-          </tr>
-          <tr className="h-1/3">
-            <td onClick={changeForthTable}>{forthTB}</td>
-            <td onClick={changeFifthTable}>{fifthTB}</td>
-            <td onClick={changeSixthTable}>{sixthTB}</td>
-          </tr>
-          <tr className="h-1/3">
-            <td onClick={changeSeventhTable}>{sevenTB}</td>
-            <td onClick={changeEighthTable}>{eigthTB}</td>
-            <td onClick={changeNinthTable}>{ninthTB}</td>
-
-          </tr>
-        </tbody>
-      </table>
+    <div>
+      <div className="w-svw h-svh flex justify-center items-center">
+        <table className="border table-fixed w-[18rem] h-[18rem] sm:w-sm sm:h-[24rem] md:w-md md:h-[28rem] lg:w-lg lg:h-[32rem] xl:w-xl xl:h-[36rem] 2xl:w-2xl 2xl:h-[42rem]">
+          <tbody className="[&>tr>td]:border [&>tr>td]:text-center">
+            <tr className="h-1/3">
+              <td onClick={changeFirstTable}>{firstTB}</td>
+              <td onClick={changeSecondTable}>{secondTB}</td>
+              <td onClick={changeThirdTable}>{thirdTB}</td>
+            </tr>
+            <tr className="h-1/3">
+              <td onClick={changeForthTable}>{forthTB}</td>
+              <td onClick={changeFifthTable}>{fifthTB}</td>
+              <td onClick={changeSixthTable}>{sixthTB}</td>
+            </tr>
+            <tr className="h-1/3">
+              <td onClick={changeSeventhTable}>{sevenTB}</td>
+              <td onClick={changeEighthTable}>{eigthTB}</td>
+              <td onClick={changeNinthTable}>{ninthTB}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div className="text-center">
+        <button
+          onClick={() => {
+            setFirstTB("");
+            setSecondTB("");
+            setThirdTB("");
+            setForthTB("");
+            setFifthTB("");
+            setSixthTB("");
+            setSeventhTB("");
+            setEighthTB("");
+            setNinthTB("");
+            setXOStatus("O");
+            setGameStatus("");
+          }}
+          className=""
+        >
+          {gameStatus && gameEndMessage && <div>123</div>}
+        </button>
+      </div>
     </div>
   );
 };
