@@ -28,30 +28,26 @@ const Page = () => {
 
   //useState for showing restart button
   const [restartButton, setRestartButton] = useState(
-    <button
-      className="bg-green-400 px-2 cursor-pointer rounded-sm"
-      onClick={() => {
-        setFirstTB("");
-        setSecondTB("");
-        setThirdTB("");
-        setForthTB("");
-        setFifthTB("");
-        setSixthTB("");
-        setSeventhTB("");
-        setEighthTB("");
-        setNinthTB("");
-        setXOStatus("O");
-        setGameStatus("");
-      }}
-    >
-      Play Again
-    </button>
+    "Play Again"
+    // <button
+    //   className="bg-green-400 px-2 cursor-pointer rounded-sm"
+    //   onClick={() => {
+    //     setFirstTB("");
+    //     setSecondTB("");
+    //     setThirdTB("");
+    //     setForthTB("");
+    //     setFifthTB("");
+    //     setSixthTB("");
+    //     setSeventhTB("");
+    //     setEighthTB("");
+    //     setNinthTB("");
+    //     setXOStatus("O");
+    //     setGameStatus("");
+    //   }}
+    // >
+    //   Play Again
+    // </button>
   );
-
-  /*useState for showing message when the game is end 
-  show O won, X won, or draw
-  */
-  const [gameEndMessage, setGameEndMessage] = useState("");
 
   //function for setting the first table value
   function changeFirstTable() {
@@ -70,7 +66,6 @@ const Page = () => {
 
       /*if all the other tables is filled, the game is draw */
       if (
-        firstTB != "" &&
         secondTB != "" &&
         thirdTB != "" &&
         forthTB != "" &&
@@ -99,7 +94,6 @@ const Page = () => {
 
       /*if all the other tables is filled, the game is draw */
       if (
-        firstTB != "" &&
         secondTB != "" &&
         thirdTB != "" &&
         forthTB != "" &&
@@ -133,7 +127,6 @@ const Page = () => {
       /*if all the other tables is filled, the game is draw */
       if (
         firstTB != "" &&
-        secondTB != "" &&
         thirdTB != "" &&
         forthTB != "" &&
         fifthTB != "" &&
@@ -161,7 +154,6 @@ const Page = () => {
       /*if all the other tables is filled, the game is draw */
       if (
         firstTB != "" &&
-        secondTB != "" &&
         thirdTB != "" &&
         forthTB != "" &&
         fifthTB != "" &&
@@ -197,7 +189,6 @@ const Page = () => {
       if (
         firstTB != "" &&
         secondTB != "" &&
-        thirdTB != "" &&
         forthTB != "" &&
         fifthTB != "" &&
         sixthTB != "" &&
@@ -226,7 +217,6 @@ const Page = () => {
       if (
         firstTB != "" &&
         secondTB != "" &&
-        thirdTB != "" &&
         forthTB != "" &&
         fifthTB != "" &&
         sixthTB != "" &&
@@ -261,7 +251,6 @@ const Page = () => {
         firstTB != "" &&
         secondTB != "" &&
         thirdTB != "" &&
-        forthTB != "" &&
         fifthTB != "" &&
         sixthTB != "" &&
         sevenTB != "" &&
@@ -289,7 +278,6 @@ const Page = () => {
         firstTB != "" &&
         secondTB != "" &&
         thirdTB != "" &&
-        forthTB != "" &&
         fifthTB != "" &&
         sixthTB != "" &&
         sevenTB != "" &&
@@ -326,7 +314,6 @@ const Page = () => {
         secondTB != "" &&
         thirdTB != "" &&
         forthTB != "" &&
-        fifthTB != "" &&
         sixthTB != "" &&
         sevenTB != "" &&
         eigthTB != "" &&
@@ -356,7 +343,6 @@ const Page = () => {
         secondTB != "" &&
         thirdTB != "" &&
         forthTB != "" &&
-        fifthTB != "" &&
         sixthTB != "" &&
         sevenTB != "" &&
         eigthTB != "" &&
@@ -390,7 +376,6 @@ const Page = () => {
         thirdTB != "" &&
         forthTB != "" &&
         fifthTB != "" &&
-        sixthTB != "" &&
         sevenTB != "" &&
         eigthTB != "" &&
         ninthTB != ""
@@ -418,7 +403,6 @@ const Page = () => {
         thirdTB != "" &&
         forthTB != "" &&
         fifthTB != "" &&
-        sixthTB != "" &&
         sevenTB != "" &&
         eigthTB != "" &&
         ninthTB != ""
@@ -453,7 +437,6 @@ const Page = () => {
         forthTB != "" &&
         fifthTB != "" &&
         sixthTB != "" &&
-        sevenTB != "" &&
         eigthTB != "" &&
         ninthTB != ""
       ) {
@@ -481,7 +464,6 @@ const Page = () => {
         forthTB != "" &&
         fifthTB != "" &&
         sixthTB != "" &&
-        sevenTB != "" &&
         eigthTB != "" &&
         ninthTB != ""
       ) {
@@ -515,7 +497,6 @@ const Page = () => {
         fifthTB != "" &&
         sixthTB != "" &&
         sevenTB != "" &&
-        eigthTB != "" &&
         ninthTB != ""
       ) {
         setGameStatus("draw");
@@ -542,7 +523,6 @@ const Page = () => {
         fifthTB != "" &&
         sixthTB != "" &&
         sevenTB != "" &&
-        eigthTB != "" &&
         ninthTB != ""
       ) {
         setGameStatus("draw");
@@ -576,8 +556,7 @@ const Page = () => {
         fifthTB != "" &&
         sixthTB != "" &&
         sevenTB != "" &&
-        eigthTB != "" &&
-        ninthTB != ""
+        eigthTB != ""
       ) {
         setGameStatus("draw");
       }
@@ -604,11 +583,9 @@ const Page = () => {
         fifthTB != "" &&
         sixthTB != "" &&
         sevenTB != "" &&
-        eigthTB != "" &&
-        ninthTB != ""
+        eigthTB != ""
       ) {
         setGameStatus("draw");
-        console.log(gameStatus);
       }
 
       //
@@ -643,24 +620,87 @@ const Page = () => {
         </table>
       </div>
       <div className="text-center">
-        <button
-          onClick={() => {
-            setFirstTB("");
-            setSecondTB("");
-            setThirdTB("");
-            setForthTB("");
-            setFifthTB("");
-            setSixthTB("");
-            setSeventhTB("");
-            setEighthTB("");
-            setNinthTB("");
-            setXOStatus("O");
-            setGameStatus("");
-          }}
-          className=""
-        >
-          {gameStatus && gameEndMessage && <div>123</div>}
-        </button>
+        {gameStatus == "O won" ? (
+          <div>
+            <div>Game is Over. O is won the game.</div>
+            <div>
+              Please click here to{" "}
+              <button
+                className="bg-green-400 px-2 rounded-lg"
+                onClick={() => {
+                  setFirstTB("");
+                  setSecondTB("");
+                  setThirdTB("");
+                  setForthTB("");
+                  setFifthTB("");
+                  setSixthTB("");
+                  setSeventhTB("");
+                  setEighthTB("");
+                  setNinthTB("");
+
+                  setXOStatus("O");
+                  setGameStatus("");
+                }}
+              >
+                Play again
+              </button>
+            </div>
+          </div>
+        ) : gameStatus == "X won" ? (
+          <div>
+            <div>Game is Over. X is won the game.</div>
+            <div>
+              Please click here{" "}
+              <button
+                className="bg-green-400 px-2 rounded-lg"
+                onClick={() => {
+                  setFirstTB("");
+                  setSecondTB("");
+                  setThirdTB("");
+                  setForthTB("");
+                  setFifthTB("");
+                  setSixthTB("");
+                  setSeventhTB("");
+                  setEighthTB("");
+                  setNinthTB("");
+
+                  setXOStatus("O");
+                  setGameStatus("");
+                }}
+              >
+                Play again
+              </button>
+            </div>
+          </div>
+        ) : gameStatus == "draw" ? (
+          <div>
+            <div>Game is draw.</div>
+            <div>
+              Please click here{" "}
+              <button
+                className="bg-green-400 px-2 rounded-lg"
+                onClick={() => {
+                  setFirstTB("");
+                  setSecondTB("");
+                  setThirdTB("");
+                  setForthTB("");
+                  setFifthTB("");
+                  setSixthTB("");
+                  setSeventhTB("");
+                  setEighthTB("");
+                  setNinthTB("");
+
+                  setXOStatus("O");
+                  setGameStatus("");
+                }}
+              >
+                Play again
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div></div>
+        )}
       </div>
     </div>
   );
