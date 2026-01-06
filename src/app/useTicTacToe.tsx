@@ -13,6 +13,9 @@ export function useTicTacToe() {
   const [ninthTB, setNinthTB] = useState("");
   const [gameStatus, setGameStatus] = useState("");
 
+  const [xScore, setXscore] = useState(0);
+  const [oScore, setOscore] = useState(0);
+
   function changeFirstTable() {
     if (XOStatus === "O" && firstTB === "" && gameStatus === "") {
       setFirstTB("O");
@@ -22,6 +25,7 @@ export function useTicTacToe() {
         (forthTB === "O" && sevenTB === "O")
       ) {
         setGameStatus("O Wins!");
+        setOscore((prev) => prev + 1);
       }
       if (
         secondTB !== "" &&
@@ -44,6 +48,7 @@ export function useTicTacToe() {
         (forthTB === "X" && sevenTB === "X")
       ) {
         setGameStatus("X Wins!");
+        setXscore((prev) => prev + 1);
       }
       if (
         secondTB !== "" &&
@@ -69,6 +74,7 @@ export function useTicTacToe() {
         (fifthTB === "O" && eigthTB === "O")
       ) {
         setGameStatus("O Wins!");
+        setOscore((prev) => prev + 1);
       }
 
       if (
@@ -92,6 +98,7 @@ export function useTicTacToe() {
         (fifthTB === "X" && eigthTB === "X")
       ) {
         setGameStatus("X Wins!");
+        setXscore((prev) => prev + 1);
       }
 
       if (
@@ -120,6 +127,7 @@ export function useTicTacToe() {
         (sixthTB === "O" && ninthTB === "O")
       ) {
         setGameStatus("O Wins!");
+        setOscore((prev) => prev + 1);
       }
 
       if (
@@ -143,6 +151,7 @@ export function useTicTacToe() {
         (sixthTB === "X" && ninthTB === "X")
       ) {
         setGameStatus("X Wins!");
+        setXscore((prev) => prev + 1);
       }
       if (
         firstTB !== "" &&
@@ -168,6 +177,7 @@ export function useTicTacToe() {
         (fifthTB === "O" && sixthTB === "O")
       ) {
         setGameStatus("O Wins!");
+        setOscore((prev) => prev + 1);
       }
       if (
         firstTB !== "" &&
@@ -189,6 +199,7 @@ export function useTicTacToe() {
         (fifthTB === "X" && sixthTB === "X")
       ) {
         setGameStatus("X Wins!");
+        setXscore((prev) => prev + 1);
       }
 
       if (
@@ -217,6 +228,7 @@ export function useTicTacToe() {
         (forthTB === "O" && sixthTB === "O")
       ) {
         setGameStatus("O Wins!");
+        setOscore((prev) => prev + 1);
       }
       if (
         firstTB !== "" &&
@@ -240,6 +252,7 @@ export function useTicTacToe() {
         (forthTB === "X" && sixthTB === "X")
       ) {
         setGameStatus("X Wins!");
+        setXscore((prev) => prev + 1);
       }
       if (
         firstTB !== "" &&
@@ -265,6 +278,7 @@ export function useTicTacToe() {
         (thirdTB === "O" && ninthTB === "O")
       ) {
         setGameStatus("O Wins!");
+        setOscore((prev) => prev + 1);
       }
       if (
         firstTB !== "" &&
@@ -286,6 +300,7 @@ export function useTicTacToe() {
         (thirdTB === "X" && ninthTB === "X")
       ) {
         setGameStatus("X Wins!");
+        setXscore((prev) => prev + 1);
       }
       if (
         firstTB !== "" &&
@@ -312,6 +327,7 @@ export function useTicTacToe() {
         (eigthTB === "O" && ninthTB === "O")
       ) {
         setGameStatus("O Wins!");
+        setOscore((prev) => prev + 1);
       }
       if (
         firstTB !== "" &&
@@ -334,6 +350,7 @@ export function useTicTacToe() {
         (eigthTB === "X" && ninthTB === "X")
       ) {
         setGameStatus("X Wins!");
+        setXscore((prev) => prev + 1);
       }
       if (
         firstTB !== "" &&
@@ -359,6 +376,7 @@ export function useTicTacToe() {
         (sevenTB === "O" && ninthTB === "O")
       ) {
         setGameStatus("O Wins!");
+        setOscore((prev) => prev + 1);
       }
       if (
         firstTB !== "" &&
@@ -380,6 +398,7 @@ export function useTicTacToe() {
         (sevenTB === "X" && ninthTB === "X")
       ) {
         setGameStatus("X Wins!");
+        setXscore((prev) => prev + 1);
       }
       if (
         firstTB !== "" &&
@@ -406,6 +425,7 @@ export function useTicTacToe() {
         (sevenTB === "O" && eigthTB === "O")
       ) {
         setGameStatus("O Wins!");
+        setOscore((prev) => prev + 1);
       }
       if (
         firstTB !== "" &&
@@ -428,6 +448,7 @@ export function useTicTacToe() {
         (sevenTB === "X" && eigthTB === "X")
       ) {
         setGameStatus("X Wins!");
+        setXscore((prev) => prev + 1);
       }
       if (
         firstTB !== "" &&
@@ -461,6 +482,8 @@ export function useTicTacToe() {
 
   return {
     XOStatus,
+    xScore,
+    oScore,
     firstTB,
     secondTB,
     thirdTB,
