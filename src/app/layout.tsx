@@ -6,7 +6,11 @@ import {
   ColorSchemeScript,
   MantineProvider,
   mantineHtmlProps,
+  type MantineColorsTuple,
+  createTheme,
 } from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
+import Appshell from "@/component/AppShell";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,6 +27,26 @@ export const metadata: Metadata = {
   description: "create tic-tac-toe game",
 };
 
+const myColor: MantineColorsTuple = [
+  "#dffbff",
+  "#caf2ff",
+  "#99e2ff",
+  "#64d2ff",
+  "#3cc4fe",
+  "#23bcfe",
+  "#00b5ff",
+  "#00a1e4",
+  "#008fcd",
+  "#007cb6",
+];
+
+const theme = createTheme({
+  colors: {
+    myColor,
+  },
+  primaryColor: "myColor",
+});
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -36,7 +60,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <MantineProvider>{children}</MantineProvider>
+        <MantineProvider theme={theme}>
+          {/* <Appshell> */}
+          {children}
+          {/* </Appshell> */}
+        </MantineProvider>
       </body>
     </html>
   );
