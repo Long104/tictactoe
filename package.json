@@ -3,9 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev-next": "next dev",
+    "dev": "node src/server.js",
     "build": "next build",
-    "start": "next start",
+    "start-next": "next start",
+    "start": "NODE_ENV=production node src/server.js",
     "lint": "eslint"
   },
   "dependencies": {
@@ -16,7 +18,9 @@
     "postcss-preset-mantine": "^1.18.0",
     "postcss-simple-vars": "^7.0.1",
     "react": "19.2.0",
-    "react-dom": "19.2.0"
+    "react-dom": "19.2.0",
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
