@@ -1,4 +1,5 @@
 "use client";
+import { Grid } from "@mantine/core";
 import react, { useState } from "react";
 import { useTicTacToe } from "./useTicTacToe";
 
@@ -28,6 +29,7 @@ const Page = () => {
     resetGame,
   } = useTicTacToe();
 
+  // group-hover:opacity-100 transition duration-1000 group-hover:duration-200
   console.log(gameStatus);
   return (
     <div>
@@ -105,5 +107,4 @@ const Page = () => {
     </div>
   );
 };
-
 export default Page;
