@@ -60,7 +60,7 @@ const Page = () => {
             <div onClick={changeEighthTable}>{eigthTB}</div>
             <div onClick={changeNinthTable}>{ninthTB}</div>
           </SimpleGrid>
-          <div className="xl:hidden text-5xl py-2 px-6 rounded-lg mt-2 bg-black/80 mix-blend-multiply text-white">
+          <div className="xl:hidden text-5xl py-2 px-6 rounded-lg my-2 bg-black/80 mix-blend-multiply text-white">
             O : {oScore}{" "}
           </div>
         </div>
