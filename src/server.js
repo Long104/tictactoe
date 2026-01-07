@@ -11,6 +11,7 @@ const handler = app.getRequestHandler();
 
 // Store the shared text value on the server
 let sharedText = "";
+let sharedText2 = "";
 
 app.prepare().then(() => {
   const httpServer = createServer(handler);
@@ -28,6 +29,18 @@ app.prepare().then(() => {
       sharedText = newText;
       // Broadcast to ALL clients (including sender for consistency)
       io.emit("text-update", newText);
+    });
+
+    // 2
+    socket.on("get-text2", () => {
+      socket.emit("text-update2", sharedText2);
+    });
+
+    // When a client changes the text
+    socket.on("text-change2", (newText) => {
+      sharedText2 = newText;
+      // Broadcast to ALL clients (including sender for consistency)
+      io.emit("text-update2", newText);
     });
   });
 
