@@ -123,6 +123,7 @@ const Page = () => {
             <div>
               {chatMessage.map((msg, index) => (
                 <div
+                  key={index}
                   className={`p-4 bg-gray-500 rounded-lg mb-6 ${msg.from == player ? "justify-self-end" : "justify-self-start"}`}
                 >
                   {msg.text}
