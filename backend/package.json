@@ -6,10 +6,16 @@
     "dev": "bun run --watch src/index.ts"
   },
   "dependencies": {
-    "elysia": "latest"
+    "@socket.io/bun-engine": "^0.1.0",
+    "hono": "^4.11.3",
+    "socket.io": "^4.8.3"
   },
   "devDependencies": {
     "bun-types": "latest"
   },
-  "module": "src/index.js"
+  "module": "src/index.js",
+  "optionalDependencies": {
+    "bufferutil": "*",
+    "utf-8-validate": "*"
+  }
 }
