@@ -12,6 +12,8 @@ const io = new Server({
     methods: ["GET", "POST"],
     credentials: true,
   },
+  path: "/socket.io/", // ✅ Explicit path
+  transports: ["websocket", "polling"],
 });
 
 const shareValue = "";
@@ -36,7 +38,11 @@ const app = new Hono();
 app.use(
   "*",
   cors({
-    origin: "http://localhost:3000",
+    origin:
+      process.env.NODE_ENV === "production"
+        ? "tictactoe-gamma-dusky-67.vercel.app"
+        : "http://localhost:3000",
+
     allowMethods: ["GET", "POST", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
     credentials: true,
@@ -54,6 +60,19 @@ export default {
 
   fetch(req: Request, server: Bun.Server<any>): Response | Promise<Response> {
     const url = new URL(req.url);
+
+    if (req.method === "OPTIONS") {
+      return new Response(null, {
+        status: 204,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, Authorization",
+          "Access-Control-Allow-Credentials": "true",
+          "Access-Control-Max-Age": "600",
+        },
+      });
+    }
 
     if (url.pathname === "/socket.io/") {
       return engine.handleRequest(req, server);
