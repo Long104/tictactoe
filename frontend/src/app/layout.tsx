@@ -11,8 +11,9 @@ import {
   Button,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import Appshell from "@/component/AppShell";
+import Appshell from "@/components/AppShell";
 import Link from "next/link";
+import SocketProvider from "@/context/SocketContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -63,18 +64,20 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <MantineProvider theme={theme}>
-          {/* <Appshell> */}
-          <div className="relative overflow-hidden">
-            <div className="w-full h-full absolute inset-0 bg-gradient-to-r from-[#00b5ff] to-[#7b2eda] rounded-xl blur-sm opacity-95 animate-[pulse_7s_ease-in-out_infinite]"></div>
-            {children}
-            {/* </Appshell> */}
-            <Link
-              href={"/"}
-              className="fixed left-10 top-10 bg-black/80 mix-blend-multiply text-white p-4 rounded-lg"
-            >
-              Back to Home
-            </Link>
-          </div>
+          <SocketProvider>
+            {/* <Appshell> */}
+            <div className="relative overflow-hidden">
+              <div className="w-full h-full absolute inset-0 bg-gradient-to-r from-[#00b5ff] to-[#7b2eda] rounded-xl blur-sm opacity-95 animate-[pulse_7s_ease-in-out_infinite]"></div>
+              <Link
+                href={"/"}
+                className="cursor-pointer select-none fixed z-10 left-10 top-10 bg-black/80 mix-blend-multiply text-white p-4 rounded-lg"
+              >
+                Back to Home
+              </Link>
+              {children}
+              {/* </Appshell> */}
+            </div>
+          </SocketProvider>
         </MantineProvider>
       </body>
     </html>

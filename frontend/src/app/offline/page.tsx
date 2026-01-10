@@ -17,6 +17,7 @@ const Page = () => {
   ]);
   const {
     XOStatus,
+    resetScore,
     xScore,
     oScore,
     firstTB,
@@ -79,15 +80,23 @@ const Page = () => {
         <button className="flex justify-center items-center lg:hidden text-white mix-blend-multiply font-bold cursor-pointer select-none p-6 mt-6 rounded-lg">
           {gameStatus ? (
             <div className="flex *:m-4">
-              <div className="text-lg bg-black/80" onClick={resetGame}>
+              <div
+                className="text-lg bg-black/80 p-4 rounded-lg text-center"
+                onClick={resetGame}
+              >
                 Play again
               </div>
-              <div className="text-lg bg-black/80" onClick={resetGame}>
-                Play again
+              <div
+                className="text-lg bg-black/80 p-4 rounded-lg text-center"
+                onClick={resetScore}
+              >
+                Reset score
               </div>
             </div>
           ) : (
-            <div className="text-lg bg-black/80">You currently In game</div>
+            <div className="text-lg bg-black/80 p-4 rounded-lg">
+              You currently In game
+            </div>
           )}
         </button>
       </div>

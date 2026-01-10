@@ -16,6 +16,11 @@ export function useTicTacToe() {
   const [xScore, setXscore] = useState(0);
   const [oScore, setOscore] = useState(0);
 
+  function resetScore() {
+    setXscore(0);
+    setOscore(0);
+  }
+
   function changeFirstTable() {
     if (XOStatus === "O" && firstTB === "" && gameStatus === "") {
       setFirstTB("O");
@@ -482,5 +487,6 @@ export function useTicTacToe() {
     changeEighthTable,
     changeNinthTable,
     resetGame,
+    resetScore,
   };
 }

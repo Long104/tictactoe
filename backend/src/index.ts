@@ -1,8 +1,17 @@
 import { Server as Engine } from "@socket.io/bun-engine";
 import { Server } from "socket.io";
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 
-const io = new Server();
+const io = new Server({
+  cors: {
+    origin: "http://localhost:3000",
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
+});
+
+const shareValue = "";
 
 const engine = new Engine();
 
@@ -10,9 +19,27 @@ io.bind(engine);
 
 io.on("connection", (socket) => {
   // ...
+  socket.on("create-something", (value) => {
+    // io.emit("foo", value);
+    socket.broadcast.emit("foo", value);
+  });
+
+  socket.on("openChatBroadcast", (value) => {
+    socket.broadcast.emit("openChat", value);
+  });
 });
 
 const app = new Hono();
+app.use(
+  "*",
+  cors({
+    origin: "http://localhost:3000",
+    allowMethods: ["GET", "POST", "OPTIONS"],
+    allowHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+    maxAge: 600,
+  }),
+);
 
 app.get("/", (c) => c.text("Hono!"));
 
