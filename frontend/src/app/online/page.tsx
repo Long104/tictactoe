@@ -40,6 +40,7 @@ const Page = () => {
     changeEighthTable,
     changeNinthTable,
     resetGame,
+    resetScore,
   } = useTicTacToe();
 
   function handleChat(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -51,8 +52,7 @@ const Page = () => {
 
   console.log(gameStatus);
   return (
-    <div className="relative overflow-hidden">
-      <div className="w-full h-full absolute inset-0 bg-gradient-to-r from-[#00b5ff] to-[#7b2eda] rounded-xl blur-sm opacity-95 animate-[pulse_7s_ease-in-out_infinite]"></div>
+    <>
       <div className="relative w-svw h-svh grid grid-cols-1 lg:grid-cols-[60%_40%] xl:grid-cols-3 place-items-center">
         {/* chat for online player when screen is bigger then 1280 */}
         <div className="flex flex-col justify-end max-xl:hidden relative  w-[18rem] h-[18rem] sm:w-[18rem] sm:h-[24rem] md:w-[20rem] md:h-[28rem] lg:w-[20rem] lg:h-[32rem] 2xl:w-[24rem] 2xl:h-[36rem] bg-black/80 rounded-xl text-white mix-blend-multiply">
@@ -90,6 +90,28 @@ const Page = () => {
           <div className="lg:hidden text-5xl py-2 px-6 rounded-lg my-2 bg-black/80 mix-blend-multiply text-white">
             O : {oScore}{" "}
           </div>
+          <button className="flex justify-center items-center lg:hidden text-white mix-blend-multiply font-bold cursor-pointer select-none p-6 mt-6 rounded-lg">
+            {gameStatus ? (
+              <div className="flex *:m-4">
+                <div
+                  className="text-lg bg-black/80 p-4 rounded-lg text-center"
+                  onClick={resetGame}
+                >
+                  Play again
+                </div>
+                <div
+                  className="text-lg bg-black/80 p-4 rounded-lg text-center"
+                  onClick={resetScore}
+                >
+                  Reset score
+                </div>
+              </div>
+            ) : (
+              <div className="text-lg bg-black/80 p-4 rounded-lg">
+                You currently In game
+              </div>
+            )}
+          </button>
         </div>
         <div className="hidden lg:block relative w-[18rem] h-[18rem] sm:w-[18rem] sm:h-[24rem] md:w-[20rem] md:h-[28rem] lg:w-[20rem] lg:h-[32rem] 2xl:w-[24rem] 2xl:h-[36rem] bg-black/80 rounded-xl text-white mix-blend-multiply">
           <div className="grid h-full w-full grid-rows-3 place-items-center">
@@ -106,7 +128,20 @@ const Page = () => {
               </div>
               <button className="font-bold block cursor-pointer select-none flex-1 bg-gray-500 h-full w-full">
                 {gameStatus ? (
-                  <div onClick={resetGame}>Play again</div>
+                  <div className="grid grid-cols-2 h-full w-full">
+                    <span
+                      className="hover:bg-black/80 w-full h-full grid place-items-center"
+                      onClick={resetGame}
+                    >
+                      Play again
+                    </span>
+                    <span
+                      className="hover:bg-black/80 w-full h-full grid place-items-center"
+                      onClick={resetScore}
+                    >
+                      resetScore
+                    </span>
+                  </div>
                 ) : (
                   "You In game"
                 )}
@@ -142,7 +177,7 @@ const Page = () => {
           />
         </div>
       </div>
-    </div>
+    </>
   );
 };
 export default Page;
