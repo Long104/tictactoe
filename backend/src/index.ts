@@ -5,7 +5,10 @@ import { cors } from "hono/cors";
 
 const io = new Server({
   cors: {
-    origin: "http://localhost:3000",
+    origin:
+      process.env.NODE_ENV === "production"
+        ? "tictactoe-gamma-dusky-67.vercel.app"
+        : "http://localhost:3000",
     methods: ["GET", "POST"],
     credentials: true,
   },
