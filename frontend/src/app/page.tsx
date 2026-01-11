@@ -47,10 +47,10 @@ const page = () => {
   }, [socket]);
 
   return (
-    <div className="relative w-svw h-svh grid grid-cols-1 md:grid-cols-2 place-items-center">
+    <div className="relative w-svw h-svh grid grid-cols-1 md:grid-cols-2 gap-4 p-4 place-items-center">
       {/* choose between online and offline */}
-      <div className="*:text-4xl w-lg h-2/3 bg-black/80 text-white mix-blend-multiply grid grid-rows-2 place-items-center rounded-lg">
-        <Link href={"online"} className="w-full h-full">
+      <div className="p-4 *:text-4xl w-full h-2/3 bg-black/80 text-white mix-blend-multiply grid grid-rows-2 place-items-center rounded-lg">
+        <Link href={"online"} className="w-full h-full ">
           <div className="p-6 hover:bg-gray-500 w-full h-full grid place-items-center rounded-lg">
             Play Online
           </div>
@@ -60,9 +60,21 @@ const page = () => {
             Play Offline
           </div>
         </Link>
+        <div>
+          <Link href={"offline"} className="w-full h-full">
+            <div className="p-6 hover:bg-gray-500 w-full h-full grid place-items-center rounded-lg">
+              create room
+            </div>
+          </Link>
+          <Link href={"offline"} className="w-full h-full">
+            <div className="p-6 hover:bg-gray-500 w-full h-full grid place-items-center rounded-lg">
+              join room
+            </div>
+          </Link>
+        </div>
       </div>
       {/* open chat */}
-      <div className="flex flex-col justify-end w-md h-2/3 bg-black/80 text-white mix-blend-multiply rounded-lg">
+      <div className="flex flex-col justify-end w-full h-96 md:h-2/3 bg-black/80 text-white mix-blend-multiply rounded-lg">
         {openChatMessage && (
           <div>
             {openChatMessage.map((msg, index) => (
