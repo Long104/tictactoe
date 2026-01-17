@@ -1,94 +1,121 @@
 "use client";
 import { SimpleGrid, Tabs, Textarea } from "@mantine/core";
-import { useTicTacToe } from "../useTicTacToe";
-import {
-  IconPhoto,
-  IconMessageCircle,
-  IconSettings,
-} from "@tabler/icons-react";
-import { useState } from "react";
+import { useTicTacToe } from "@hook/useTicTactoeOnline";
+import { useState, use, useEffect } from "react";
+import { useRoom } from "@/hook/useRoom";
 
-const Page = () => {
+type ChatMessageType = {
+  from: string;
+  message: string;
+};
+
+const Page = ({ params }: { params: Promise<{ id: string }> }) => {
   // try to declare destructure everything include useState and functions
-  const [message, setMessage] = useState("");
-  const [chatMessage, setChatMessage] = useState([
-    { from: "ming", text: "hello Long" },
-    { from: "long", text: "hello ming" },
-  ]);
-  const [player, setPlayer] = useState("long");
+  const { id } = use(params);
+  const { joinRoom, leaveRoom, socket, sendChat, sendMove } = useRoom(id);
+  console.log("id:", id);
+  const [chatMessage, setChatMessage] = useState<ChatMessageType[]>([]);
+  const [player, setPlayer] = useState<string>("");
   const {
-    XOStatus,
-    xScore,
-    oScore,
-    firstTB,
-    secondTB,
-    thirdTB,
-    forthTB,
-    fifthTB,
-    sixthTB,
-    sevenTB,
-    eigthTB,
-    ninthTB,
-    gameStatus,
-    changeFirstTable,
-    changeSecondTable,
-    changeThirdTable,
-    changeForthTable,
-    changeFifthTable,
-    changeSixthTable,
-    changeSeventhTable,
-    changeEighthTable,
-    changeNinthTable,
-    resetGame,
     resetScore,
-  } = useTicTacToe();
+    resetGame,
+    board,
+    setBoard,
+    roleScore,
+    gameCheckStatus,
+    gameStatus,
+    changeBoardPositionRole,
+    role
+  } = useTicTacToe(id, player);
 
-  function handleChat(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+  function handleRoomChat(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey) {
-      setMessage("");
       e.preventDefault();
+      const value = e.currentTarget.value;
+      sendChat(player, value);
+      e.currentTarget.value = "";
     }
   }
 
-  console.log(gameStatus);
+  useEffect(() => {
+    joinRoom();
+    // Listen for room-specific events
+    // update chat state
+    socket.on("roomChatUpdate", (data: ChatMessageType) => {
+      setChatMessage((prev: ChatMessageType[]) => [...prev, data]);
+      console.log("data", data);
+    });
+    return () => {
+      leaveRoom();
+      socket.off("roomChatUpdate");
+    };
+  }, [id]);
+
+  useEffect(() => {
+    (function () {
+      const random = crypto
+        .getRandomValues(new Uint32Array(1))[0]
+        .toString()
+        .slice(0, 5);
+      setPlayer(`guest${random}`);
+      return `guest${random}`;
+    })();
+  }, []);
+
   return (
     <>
       <div className="relative w-svw h-svh grid grid-cols-1 lg:grid-cols-[60%_40%] xl:grid-cols-3 place-items-center">
         {/* chat for online player when screen is bigger then 1280 */}
         <div className="flex flex-col justify-end max-xl:hidden relative  w-[18rem] h-[18rem] sm:w-[18rem] sm:h-[24rem] md:w-[20rem] md:h-[28rem] lg:w-[20rem] lg:h-[32rem] 2xl:w-[24rem] 2xl:h-[36rem] bg-black/80 rounded-xl text-white mix-blend-multiply">
+          <div className="flex-1 overflow-y-auto p-2 items-self-end">
+            {chatMessage && (
+              <div>
+                {chatMessage.map((msg, index) => (
+                  <div
+                    key={index}
+                    className={`p-4 bg-gray-500 rounded-lg mb-6 ${msg.from == player ? "justify-self-end" : "justify-self-start"}`}
+                  >
+                    {msg.from != player && (
+                      <span>
+                        {msg.from} {"> "}
+                      </span>
+                    )}
+                    {msg.message}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           <Textarea
             // label="Input label"
             // description="Input description"
             placeholder="Chat with friend"
             w={"100%"}
-            onKeyDown={handleChat}
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={handleRoomChat}
             className="p-4"
           />
         </div>
 
         <div className="flex justify-center items-center relative rounded-lg h-full w-full flex-col">
           <div className="lg:hidden text-5xl py-2 px-6 rounded-lg my-2 bg-black/80 mix-blend-multiply text-white">
-            X : {xScore}{" "}
+            X : {roleScore.xScore}{" "}
           </div>
           <SimpleGrid
             cols={3}
             spacing={"sm"}
             className="*:h-full *:w-full *:rounded-xl *:flex *:items-center *:justify-center *:bg-black/80 *:font-bold *:text-6xl sm:*:text-7xl lg:*:text-8xl xl:*:text-9xl *:text-white mix-blend-multiply auto-rows-fr w-[18rem] h-[18rem] sm:w-sm sm:h-[24rem] md:w-md md:h-[28rem] lg:w-lg lg:h-[32rem] 2xl:w-[36rem] 2xl:h-[36rem]"
           >
-            <div onClick={changeFirstTable}>{firstTB}</div>
-            <div onClick={changeSecondTable}>{secondTB}</div>
-            <div onClick={changeThirdTable}>{thirdTB}</div>
-            <div onClick={changeForthTable}>{forthTB}</div>
-            <div onClick={changeFifthTable}>{fifthTB}</div>
-            <div onClick={changeSixthTable}>{sixthTB}</div>
-            <div onClick={changeSeventhTable}>{sevenTB}</div>
-            <div onClick={changeEighthTable}>{eigthTB}</div>
-            <div onClick={changeNinthTable}>{ninthTB}</div>
+            {board.map((role, index) => (
+              <div
+                key={index}
+                onClick={() => changeBoardPositionRole(index, role)}
+              >
+                {role}
+              </div>
+            ))}
           </SimpleGrid>
           <div className="lg:hidden text-5xl py-2 px-6 rounded-lg my-2 bg-black/80 mix-blend-multiply text-white">
-            O : {oScore}{" "}
+            O : {roleScore.oScore}{" "}
           </div>
           <button className="flex justify-center items-center lg:hidden text-white mix-blend-multiply font-bold cursor-pointer select-none p-6 mt-6 rounded-lg">
             {gameStatus ? (
@@ -115,14 +142,14 @@ const Page = () => {
         </div>
         <div className="hidden lg:block relative w-[18rem] h-[18rem] sm:w-[18rem] sm:h-[24rem] md:w-[20rem] md:h-[28rem] lg:w-[20rem] lg:h-[32rem] 2xl:w-[24rem] 2xl:h-[36rem] bg-black/80 rounded-xl text-white mix-blend-multiply">
           <div className="grid h-full w-full grid-rows-3 place-items-center">
-            <div className="text-8xl">X : {xScore} </div>
+            <div className="text-8xl">X : {roleScore.xScore} </div>
             <div className="h-full w-full flex justify-center items-center flex-col">
               <div className="flex flex-1 h-full w-full justify-center items-center bg-gray-600">
-                {gameStatus == "X Wins!"
+                {gameStatus == "xWin"
                   ? "X won the game"
-                  : gameStatus == "O Wins!"
+                  : gameStatus == "oWin"
                     ? "O Wins!"
-                    : gameStatus == "Draw!"
+                    : gameStatus == "draw"
                       ? "The game is draw"
                       : "You played TicTacToe"}
               </div>
@@ -147,33 +174,38 @@ const Page = () => {
                 )}
               </button>
             </div>
-            <div className="text-8xl">O : {oScore}</div>
+            <div className="text-8xl">O : {roleScore.oScore}</div>
           </div>
         </div>
       </div>
       {/* chat for online player when screen is smaller than 1280 it will go in the bottom */}
       <div className="relative flex justify-center col items-end h-full w-full p-4 xl:hidden">
         <div className="flex flex-col justify-end  w-[18rem] h-[18rem] sm:w-[24rem] sm:h-[24rem] md:w-[28rem] md:h-[28rem] lg:w-[32rem] lg:h-[32rem] 2xl:w-[36rem] 2xl:h-[36rem] p-4 xl:hidden bg-black/80 rounded-xl text-white mix-blend-multiply">
-          {chatMessage && (
-            <div>
-              {chatMessage.map((msg, index) => (
-                <div
-                  key={index}
-                  className={`p-4 bg-gray-500 rounded-lg mb-6 ${msg.from == player ? "justify-self-end" : "justify-self-start"}`}
-                >
-                  {msg.text}
-                </div>
-              ))}
-            </div>
-          )}
+          <div className="flex-1 overflow-y-auto p-2 items-self-end">
+            {chatMessage && (
+              <div>
+                {chatMessage.map((msg, index) => (
+                  <div
+                    key={index}
+                    className={`p-4 bg-gray-500 rounded-lg mb-6 ${msg.from == player ? "justify-self-end" : "justify-self-start"}`}
+                  >
+                    {msg.from != player && (
+                      <span>
+                        {msg.from} {"> "}
+                      </span>
+                    )}
+                    {msg.message}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           <Textarea
             // label="Input label"
             // description="Input description"
             placeholder="Chat with friend"
             w={"100%"}
-            onKeyDown={handleChat}
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={handleRoomChat}
           />
         </div>
       </div>

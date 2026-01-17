@@ -1,6 +1,6 @@
 "use client";
 import { SimpleGrid, Tabs, Textarea } from "@mantine/core";
-import { useTicTacToe } from "../useTicTacToe";
+import { useTicTacToe } from "../../hook/useTicTacToe";
 import {
   IconPhoto,
   IconMessageCircle,

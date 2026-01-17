@@ -13,15 +13,13 @@ interface SocketContextType {
 
 export const SocketContext = createContext<SocketContextType>({
   isConnected: false,
-  socket: socket,
+  socket,
 });
 
 const SocketProvider = ({ children }: props) => {
   const [isConnected, setIsConnected] = useState(socket.connected || false);
 
   useEffect(() => {
-    socket.connect();
-
     function onConnect() {
       setIsConnected(true);
     }
@@ -32,10 +30,13 @@ const SocketProvider = ({ children }: props) => {
     socket.on("connect", onConnect);
     socket.on("disconnect", onDisconnect);
 
+    if (!socket.connected) {
+      socket.connect();
+    }
+
     return () => {
       socket.off("connect", onConnect);
       socket.off("disconnect", onDisconnect);
-      socket.disconnect();
     };
   }, []);
 

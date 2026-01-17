@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { socket } from "../../socket";
-import { useSocket } from "@hook/useSocket";
+import { useSocket } from "@/hook/useSocket";
 import { Events } from "../../components/Events";
 import { MyForm } from "../../components/MyForm";
 
