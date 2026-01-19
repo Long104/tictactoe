@@ -2,7 +2,7 @@
 import { socket } from "@/socket";
 import { useEffect, createContext, useState } from "react";
 
-interface props {
+interface Props {
   children: React.ReactNode;
 }
 
@@ -16,17 +16,19 @@ export const SocketContext = createContext<SocketContextType>({
   socket,
 });
 
-const SocketProvider = ({ children }: props) => {
+const SocketProvider = ({ children }: Props) => {
   const [isConnected, setIsConnected] = useState(socket.connected || false);
-
   useEffect(() => {
     function onConnect() {
       setIsConnected(true);
+      console.log("Socket connected in context");
     }
 
     function onDisconnect() {
       setIsConnected(false);
+      console.log("Socket disconnected");
     }
+
     socket.on("connect", onConnect);
     socket.on("disconnect", onDisconnect);
 
@@ -41,12 +43,9 @@ const SocketProvider = ({ children }: props) => {
   }, []);
 
   return (
-    <div>
-      <SocketContext.Provider value={{ isConnected, socket }}>
-        {children}
-      </SocketContext.Provider>
-    </div>
+    <SocketContext.Provider value={{ isConnected, socket }}>
+      {children}
+    </SocketContext.Provider>
   );
 };
-
 export default SocketProvider;

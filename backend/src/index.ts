@@ -3,6 +3,19 @@ import { Server, Socket } from "socket.io";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import dotenv from "dotenv";
+import { PlayerState, RoomState } from "./type";
+import {
+  rooms,
+  players,
+  roomPlayers,
+  addPlayerToRoom,
+  createRoom,
+  getPlayerBySocketId,
+  getPlayersInRoom,
+  getRoom,
+  getPlayerBySessionId,
+  sessionBySocket,
+} from "./state_management";
 
 dotenv.config({
   path: process.env.NODE_ENV === "local" ? ".env.local" : ".env",
@@ -14,116 +27,180 @@ const io = new Server({
     methods: ["GET", "POST"],
     credentials: true,
   },
-  path: "/socket.io/", // ✅ Explicit path
+  path: "/socket.io/",
   transports: ["websocket", "polling"],
 });
-
 const engine = new Engine();
 
 io.bind(engine);
 
-const rooms = new Map<
-  string,
-  {
-    player1?: { socketId: string; name: string; role: string };
-    player2?: { socketId: string; name: string; role: string };
-    board: string[];
-    gameStarted: boolean;
-  }
->();
-
-const socketToRoom = new Map<string, string>();
-
 io.on("connection", (socket) => {
-  socket.on("setPlayerName", (name: string) => {
+  socket.on("setPlayerName", (data: { name: string; sessionId: string }) => {
+    const { name, sessionId } = data;
     socket.data.name = name;
+    socket.data.sessionId = sessionId;
   });
 
-  socket.on("openChatBroadcast", (value) => {
-    socket.broadcast.emit("openChatUpdate", value);
-  });
+  socket.on(
+    "waitingRoom",
+    async (data: { sessionId: string; roomId: string }) => {
+      const { roomId, sessionId } = data;
+      console.log("roomId", roomId);
+      console.log("sessionId", sessionId);
 
-  socket.on("waitingRoom", async (data) => {
-    const { roomId } = data;
-    const sockets = await io.in(`room${roomId}`).fetchSockets();
-    const roomSize = sockets.length;
-    const currentRoom = rooms.get(roomId);
-    // Check if this socket was already in the room (reconnection)
-    const existingPlayer = getExistingPlayer(currentRoom, socket.id);
-    if (existingPlayer) {
-      // Returning player - restore their role
-      socket.emit("roleRestored", {
-        role: existingPlayer.role,
-      });
-      return;
-    }
-    if (roomSize === 1) {
-      // First player - waiting
-      socket.emit("waiting", "Waiting for opponent...");
-    } else if (roomSize === 2) {
-      // Second player - start game!
-      const [player1, player2] = sockets;
-      // Only assign roles if game hasn't started
-      if (!currentRoom?.gameStarted) {
-        const roles =
-          Math.random() < 0.5
-            ? [
-                { turn: "your turn", role: "X" },
-                { turn: "opponent turn", role: "O" },
-              ]
-            : [
-                { turn: "opponent turn", role: "X" },
-                { turn: "your turn", role: "O" },
-              ];
-        // Store roles in rooms map
-        rooms.set(roomId, {
-          player1: {
-            socketId: player1.id,
-            name: player1.data.name || "Player 1",
-            role: roles[0].role,
-          },
-          player2: {
-            socketId: player2.id,
-            name: player2.data.name || "Player 2",
-            role: roles[1].role,
-          },
-          board: ["", "", "", "", "", "", "", "", ""],
-          gameStarted: true,
-        });
-        // Track which room each socket is in
-        socketToRoom.set(player1.id, roomId);
-        socketToRoom.set(player2.id, roomId);
-        player1.emit("waitForOpponent", roles[0]);
-        player2.emit("waitForOpponent", roles[1]);
+      const existingPlayer = getPlayerBySessionId(sessionId);
+      console.log("existplayer", existingPlayer);
+      console.log("players:", players);
+
+      if (existingPlayer && existingPlayer.roomId === roomId) {
+        const room = getRoom(roomId);
+
+        if (room) {
+          existingPlayer.socketId = socket.id;
+
+          sessionBySocket.set(socket.id, sessionId);
+
+          socket.emit("roleRestored", {
+            // TODO: add score later
+            role: existingPlayer.role,
+            board: room.board,
+            currentTurn: room.currentTurn,
+            playerName: existingPlayer.name,
+            score: room.score,
+          });
+
+          socket.join(`room${roomId}`);
+          addPlayerToRoom(existingPlayer);
+
+          // roomPlayers.get("1")?.add("hello");
+          console.log(socket.id);
+          const sockets = await io.in(`room${roomId}`).fetchSockets();
+          return;
+        }
       }
-    } else {
-      // Room is full
-      socket.emit("error", { message: "Room is full" });
-      socket.leave(`room${roomId}`);
-    }
-  });
 
-  socket.on("joinRoom", async (roomId) => {
-    socket.join(`room${roomId}`);
-  });
+      // new player join
+      const sockets = await io.in(`room${roomId}`).fetchSockets();
+      console.log(sockets);
+      const playersInRoom = getPlayersInRoom(roomId);
+      const roomSize = playersInRoom.length;
 
-  socket.on("roomMove", async (data) => {
-    const { position, currentMovePlayer, role, roomId, board, turn, player } =
-      data;
-    // const sockets = await io.in(`room${roomId}`).fetchSockets();
-    // const [player1, player2] = sockets;
+      console.log(playersInRoom);
 
-    // rooms.set(roomId, { board: board });
+      if (roomSize === 0) {
+        console.log("roomSize == 0");
+        // first player create room
+        createRoom(roomId);
 
-    io.to(`room${roomId}`).emit("roomMoveUpdate", {
-      position,
-      currentMovePlayer,
-      turn,
-      board: rooms.get(roomId),
-      role,
-      player,
-    });
-  });
+        // create new player with session Id
+        const newPlayer: PlayerState = {
+          sessionId: sessionId,
+          socketId: socket.id,
+          name: socket.data.name || "Player 1",
+          role: "X",
+          roomId,
+          joinedAt: Date.now(),
+        };
+
+        players.set(sessionId, newPlayer);
+        sessionBySocket.set(socket.id, sessionId);
+        addPlayerToRoom(newPlayer);
+        socket.join(`room${roomId}`);
+
+        socket.emit("waiting", "Waiting for opponent...");
+      } else if (roomSize === 1) {
+        console.log("roomSize == 1");
+        // if second player - start game
+        const [player1Socket] = sockets;
+        const existingPlayer1 = getPlayerBySocketId(player1Socket.id);
+        if (!existingPlayer1) {
+          socket.emit("error", { message: "Invalid room state" });
+          return;
+        }
+        const newPlayer: PlayerState = {
+          socketId: socket.id,
+          sessionId,
+          name: socket.data.name || "Player 2",
+          role: existingPlayer1.role === "X" ? "O" : "X",
+          roomId,
+          joinedAt: Date.now(),
+        };
+
+        players.set(sessionId, newPlayer);
+        sessionBySocket.set(socket.id, sessionId);
+        addPlayerToRoom(newPlayer);
+        socket.join(`room${roomId}`);
+
+        // update room state
+        const room = getRoom(roomId);
+        if (room) {
+          room.gameStarted = true;
+          room.currentTurn = "X";
+        }
+
+        // send role assignments
+        const player1Role = existingPlayer1.role;
+        const player2Role = newPlayer.role;
+
+        player1Socket.emit("waitForOpponent", {
+          role: player1Role,
+          currentTurn: "X",
+        });
+
+        socket.emit("waitForOpponent", {
+          role: player2Role,
+          currentTurn: "X",
+        });
+      } else {
+        // room full
+        socket.emit("error", { message: "Room is full" });
+        socket.leave(`room${roomId}`);
+      }
+    },
+  );
+
+  socket.on(
+    "roomMove",
+    async (data: {
+      position: number;
+      currentMovePlayer: string;
+      role: "X" | "O";
+      roomId: string;
+      board: string[];
+      turn: string;
+      score: { xScore: number; oScore: number };
+    }) => {
+      const { position, role, roomId, board, turn, score } = data;
+      const player = getPlayerBySocketId(socket.id);
+
+      if (!player || player.roomId !== roomId) {
+        socket.emit("error", { message: "Invalid player" });
+        return;
+      }
+
+      if (player.role !== role) {
+        socket.emit("error", { message: "Invalide role" });
+        return;
+      }
+
+      const room = getRoom(roomId);
+      if (room) {
+        room.board = board;
+        room.currentTurn = turn as "X" | "O";
+
+        io.to(`room${roomId}`).emit("roomMoveUpdate", {
+          position,
+          currentMovePLayer: player.name,
+          turn,
+          board: room.board,
+          role,
+          score,
+        });
+
+        console.log(`move in room ${roomId}: ${role} at position ${position}`);
+      }
+    },
+  );
 
   socket.on(
     "roomChatBroadcast",
@@ -136,32 +213,38 @@ io.on("connection", (socket) => {
     },
   );
 
+  socket.on("openChatBroadcast", (value) => {
+    socket.broadcast.emit("openChatUpdate", value);
+  });
+
+  // ai hallucanate it didn't thought that removeplayerfromroom function remove
+  // player in players  also 😭 that's why line 53 doesn't work
   socket.on("disconnect", () => {
-    const roomId = socketToRoom.get(socket.id);
-    if (roomId) {
-      socketToRoom.delete(socket.id);
-    }
+    console.log(`client disconnected: ${socket.id}`);
+    const player = getPlayerBySocketId(socket.id);
+    if (!player) return;
+
+    const roomId = player.roomId;
+    const sessionId = player.sessionId;
+
+    setTimeout(async () => {
+      const sockets = await io.in(`room${player.roomId}`).fetchSockets();
+
+      if (sockets.length === 0) {
+        rooms.delete(roomId);
+        roomPlayers.delete(roomId);
+        players.delete(sessionId);
+        sessionBySocket.delete(socket.id);
+      }
+    }, 3000);
   });
 });
-
-function getExistingPlayer(room: any, socketId: string) {
-  if (!room) return null;
-
-  if (room.player1?.socketId === socketId) return room.player1;
-  if (room.player2?.socketId === socketId) return room.player2;
-
-  return null;
-}
 
 const app = new Hono();
 app.use(
   "*",
   cors({
-    origin:
-      process.env.NODE_ENV === "production"
-        ? "tictactoe-gamma-dusky-67.vercel.app"
-        : "http://localhost:3000",
-
+    origin: process.env.BACKEND_URL ?? "localhost:3000",
     allowMethods: ["GET", "POST", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
     credentials: true,

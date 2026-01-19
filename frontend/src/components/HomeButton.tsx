@@ -4,8 +4,6 @@ import { usePathname } from "next/navigation";
 
 const HomeButton = () => {
   const pathname = usePathname();
-  // const segments = pathname.split("/");
-  console.log(pathname);
 
   return (
     <>

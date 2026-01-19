@@ -1,14 +1,24 @@
 "use client";
 import { useSocket } from "./useSocket";
+import { useSessionStorage } from "@hook/useSessionStorage";
 
 export function useRoom(roomId: string) {
   const { socket } = useSocket();
+  const { getValue, setValue, clearValue } = useSessionStorage();
+  const sessionId = getValue("ttt_sessionId") ?? "";
   const joinRoom = () => {
-    socket.emit("joinRoom", roomId);
+    // set room ID in game state
+    // handle joinroom and waiting
+    socket.emit("waitingRoom", {
+      roomId,
+      sessionId,
+    });
   };
   const leaveRoom = () => {
+    // clear game state when leaving
     socket.emit("leaveRoom", roomId);
   };
+
   const sendMove = (moveData: {
     position: number;
     currentMovePlayer: string;
@@ -16,10 +26,11 @@ export function useRoom(roomId: string) {
     roomId: string;
     board: string[];
     turn: string;
-    player:string;
+    score: { oScore: number; xScore: number };
   }) => {
     socket.emit("roomMove", moveData);
   };
+
   const sendChat = (player: string, chatData: string) => {
     socket.emit("roomChatBroadcast", {
       roomId,
@@ -27,5 +38,6 @@ export function useRoom(roomId: string) {
       message: chatData,
     });
   };
+
   return { joinRoom, leaveRoom, sendMove, socket, sendChat };
 }

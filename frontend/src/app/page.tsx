@@ -1,10 +1,10 @@
 "use client";
 import { Textarea } from "@mantine/core";
 import Link from "next/link";
-import react, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { socket } from "@/socket";
+import { useSessionStorage } from "@/hook/useSessionStorage";
 
-// [{from:"Ming",message:"Hello Ming"},{from:"Long",message:"Hello Long"}]
 type OpenChatMessageType = {
   from: string;
   message: string;
@@ -14,9 +14,9 @@ const page = () => {
   const [openChatMessage, setOpenChatMessage] =
     useState<OpenChatMessageType[]>();
   const [player, setPlayer] = useState<string>();
+  const { getValue, setValue, clearValue } = useSessionStorage();
 
   function handleOpenChat(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    // e.preventDefault();
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       const value = e.currentTarget.value;
@@ -30,31 +30,47 @@ const page = () => {
   }
 
   useEffect(() => {
-    (function () {
+    socket.on("openChatUpdate", (value) => {
+      setOpenChatMessage((prev) => [...(prev || []), value]);
+    });
+    // gen random number
+    function generateRandomName() {
       const random = crypto
         .getRandomValues(new Uint32Array(1))[0]
         .toString()
         .slice(0, 5);
       setPlayer(`guest${random}`);
       return `guest${random}`;
-    })();
-  }, []);
+    }
+    // set name if there is non in sessionStorage
+    const name = getValue("ttt_name");
+    if (!name) {
+      setValue("ttt_name", generateRandomName());
+      setPlayer(generateRandomName());
+    } else {
+      // if there is
+      setPlayer(getValue("ttt_name"));
+    }
 
-  useEffect(() => {
-    socket.on("openChatUpdate", (value) => {
-      setOpenChatMessage((prev) => [...(prev || []), value]);
-    });
+    let sessionId = getValue("ttt_sessionId");
+
+    console.log("sessionid", sessionId);
+    if (!sessionId) {
+      sessionId = crypto.randomUUID();
+      setValue("ttt_sessionId", sessionId);
+      console.log(getValue("ttt_sessionId"));
+    }
 
     return () => {
       socket.off("openChatUpdate");
     };
-  }, [socket]);
+  }, []);
 
   return (
     <div className="relative w-svw min-h-svh grid grid-cols-1 md:grid-cols-2 gap-4 p-4 place-items-center">
       {/* choose between online and offline */}
       <div className="p-4 *:text-4xl w-full h-2/3 bg-black/80 text-white mix-blend-multiply grid grid-rows-4 place-items-center rounded-lg">
-        <Link href={"online"} className="w-full h-full ">
+        <Link href={"online/1"} className="w-full h-full ">
           <div className="p-6 hover:bg-gray-500 w-full h-full grid place-items-center rounded-lg">
             Play Online
           </div>

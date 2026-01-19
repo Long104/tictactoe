@@ -1,16 +1,12 @@
 import { io } from "socket.io-client";
 
-// "undefined" means the URL will be computed from the `window.location` object
-const URL =
-  process.env.NODE_ENV === "production"
-    ? "https://tictactoe-0sye.onrender.com"
-    : "http://localhost:8000";
+const URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 export const socket = io(URL, {
   transports: ["websocket", "polling"],
-  withCredentials: true, // matches server credentials
+  withCredentials: true,
   autoConnect: true,
   reconnection: true,
-  reconnectionAttempts: 5,
+  reconnectionAttempts: 10,
   reconnectionDelay: 1000,
 });
