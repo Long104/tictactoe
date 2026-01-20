@@ -15,7 +15,7 @@ const Page = ({ params }: { params: Promise<{ id: string }> }) => {
   const { socket, sendChat } = useRoom(id);
   const [chatMessage, setChatMessage] = useState<ChatMessageType[]>([]);
   const [player, setPlayer] = useState<string>("");
-  const { getValue } = useSessionStorage();
+  const { setValue, getValue, clearValue } = useSessionStorage();
 
   const {
     resetScore,
@@ -27,21 +27,43 @@ const Page = ({ params }: { params: Promise<{ id: string }> }) => {
     changeBoardPositionRole,
     role,
     turn,
-  } = useTicTacToe(id, getValue("ttt_name") ?? "");
+  } = useTicTacToe(id, player);
 
   useEffect(() => {
-    const name = getValue("ttt_name");
-    if (name) {
-      setPlayer(name);
-      console.log(name);
-    } else {
-      console.log("no name");
+    // gen random number
+    function generateRandomName() {
+      const random = crypto
+        .getRandomValues(new Uint32Array(1))[0]
+        .toString()
+        .slice(0, 5);
+      setPlayer(`guest${random}`);
+      return `guest${random}`;
     }
+    // set name if there is non in sessionStorage
+    const name = getValue("ttt_name");
+    if (!name) {
+      setValue("ttt_name", generateRandomName());
+      setPlayer(generateRandomName());
+    } else {
+      // if there is
+      setPlayer(getValue("ttt_name")!);
+    }
+
+    let sessionId = getValue("ttt_sessionId");
+
+    console.log("sessionid", sessionId);
+    if (!sessionId) {
+      sessionId = crypto.randomUUID();
+      setValue("ttt_sessionId", sessionId);
+      console.log(getValue("ttt_sessionId"));
+    }
+
     // Listen for room-specific events
     socket.on("roomChatUpdate", (data: ChatMessageType) => {
       setChatMessage((prev: ChatMessageType[]) => [...prev, data]);
       console.log("Chat:", data);
     });
+
     return () => {
       socket.off("roomChatUpdate");
     };

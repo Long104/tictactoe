@@ -1,5 +1,14 @@
 "use client";
-import { Textarea, Modal, TextInput, Button, Table } from "@mantine/core";
+import {
+  Textarea,
+  Modal,
+  TextInput,
+  Button,
+  Table,
+  ActionIcon,
+  CopyButton,
+  Tooltip,
+} from "@mantine/core";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { socket } from "@/socket";
@@ -7,7 +16,8 @@ import { useSessionStorage } from "@/hook/useSessionStorage";
 import { playGameSearchOnline, createRoom } from "@/lib/homePageFunction";
 import { useRouter } from "next/navigation";
 import { useDisclosure } from "@mantine/hooks";
-import { Input } from "postcss";
+import QRCode from "react-qrcode-logo";
+import { IconCopy, IconCheck } from "@tabler/icons-react";
 
 type OpenChatMessageType = {
   from: string;
@@ -24,8 +34,14 @@ const page = () => {
   const [dashboardRoom, setDashboardRoom] = useState<
     { player: string; roomName: string; roomId: string }[]
   >([]);
+  const [playWithFriendRoomId, setPlayWithFriendRoomId] = useState<string>("");
 
-  const [opened, { open, close }] = useDisclosure(false);
+  const [openedCreateRoom, { open: openCreateRoom, close: closeCreateRoom }] =
+    useDisclosure(false);
+  const [
+    openedPlayWithFriend,
+    { open: openPlayWithFriend, close: closePlayWithFriend },
+  ] = useDisclosure(false);
 
   function handleOpenChat(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -45,8 +61,6 @@ const page = () => {
       const { id } = data;
       router.push(`/online/${id}`);
     }
-
-    function room() {}
 
     // gen random number
     function generateRandomName() {
@@ -102,9 +116,20 @@ const page = () => {
     socket.emit("chooseRoom", { roomId });
   }
 
+  function handlePlayWithFriend() {
+    openPlayWithFriend();
+    const roomId = crypto.randomUUID().slice(0, 7);
+    setPlayWithFriendRoomId(roomId);
+  }
+
   return (
     <div className="relative w-svw min-h-svh p-4 grid grid-cols-2 gap-4 place-items-center">
-      <Modal opened={opened} onClose={close} title="Create Room Name">
+      {/* modal */}
+      <Modal
+        opened={openedCreateRoom}
+        onClose={closeCreateRoom}
+        title="Create Room Name"
+      >
         <TextInput
           label="Room Name"
           description="Input your room name"
@@ -115,12 +140,86 @@ const page = () => {
         />
         <Button
           mt={"xs"}
-          onClick={() => createRoom({ roomName, player }, close)}
+          onClick={() => createRoom({ roomName, player }, closeCreateRoom)}
           variant="light"
         >
           Create Your Room
         </Button>
       </Modal>
+      <Modal
+        opened={openedPlayWithFriend}
+        onClose={closePlayWithFriend}
+        title="Play with Friend"
+      >
+        <div>
+          <div className="flex gap-4">
+            <div>{`${process.env.NEXT_PUBLIC_FRONTEND_URL}/online/${playWithFriendRoomId}`}</div>
+            <CopyButton
+              value={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/online/${playWithFriendRoomId}`}
+              timeout={2000}
+            >
+              {({ copied, copy }) => (
+                <Tooltip
+                  label={copied ? "Copied" : "Copy"}
+                  withArrow
+                  position="right"
+                >
+                  <ActionIcon
+                    color={copied ? "teal" : "gray"}
+                    variant="subtle"
+                    onClick={copy}
+                  >
+                    {copied ? <IconCheck size={16} /> : <IconCopy size={16} />}
+                  </ActionIcon>
+                </Tooltip>
+              )}
+            </CopyButton>
+          </div>
+        </div>
+
+        {/* for fun */}
+        <div
+          style={{
+            position: "relative",
+            width: 300,
+            height: 300,
+            borderRadius: 12,
+            overflow: "hidden",
+          }}
+        >
+          <img
+            src="/friren.jpg" // full background art
+            alt="QR background"
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              opacity: 0.5,
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+            }}
+          >
+            <QRCode
+              value={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/online/${playWithFriendRoomId}`}
+              size={280}
+              bgColor="transparent" // let the image show through
+              fgColor="#0e3a75" // blue dots like the bottom example
+              ecLevel="H"
+              qrStyle="dots" // or "fluid" for organic shapes
+              eyeColor="#1f2937" // darker eye color for contrast
+            />
+          </div>
+        </div>
+      </Modal>
+      {/*end modal */}
       {/* choose between online and offline */}
       <div className="grid grid-rows-2 h-full w-full gap-4">
         <div className="p-4 *:text-4xl w-full h-full bg-black/80 text-white mix-blend-multiply grid grid-rows-4 place-items-center rounded-lg">
@@ -135,17 +234,15 @@ const page = () => {
               Play Offline
             </div>
           </Link>
-          <Link
-            href={"playWithFriend"}
-            className="w-full h-full cursor-pointer"
+          <div
+            className="p-6 hover:bg-gray-500 w-full h-full grid place-items-center rounded-lg"
+            onClick={handlePlayWithFriend}
           >
-            <div className="p-6 hover:bg-gray-500 w-full h-full grid place-items-center rounded-lg">
-              Play Friend
-            </div>
-          </Link>
+            Play Friend
+          </div>
           <div
             className="p-6 hover:bg-gray-500 w-full h-full grid place-items-center rounded-lg cursor-pointer"
-            onClick={open}
+            onClick={openCreateRoom}
           >
             Create Room
           </div>

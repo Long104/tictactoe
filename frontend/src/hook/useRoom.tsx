@@ -9,6 +9,7 @@ export function useRoom(roomId: string) {
   const joinRoom = () => {
     // set room ID in game state
     // handle joinroom and waiting
+    // socket.emit("joinRoom", { roomId });
     socket.emit("waitingRoom", {
       roomId,
       sessionId,
