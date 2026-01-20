@@ -17,6 +17,12 @@ import {
   sessionBySocket,
 } from "./state_management";
 
+const waitingPlayers = new Map<string, Socket>();
+const roomCreate = new Map<
+  string,
+  { socket: Socket; roomName: string; player: string; roomId: string }
+>();
+
 dotenv.config({
   path: process.env.NODE_ENV === "local" ? ".env.local" : ".env",
 });
@@ -39,6 +45,67 @@ io.on("connection", (socket) => {
     const { name, sessionId } = data;
     socket.data.name = name;
     socket.data.sessionId = sessionId;
+  });
+
+  socket.on("createRoom", (data: { roomName: string; player: string }) => {
+    const { roomName, player } = data;
+    const roomId = crypto.randomUUID().slice(0, 7);
+    roomCreate.set(roomId, { socket, roomName, player, roomId });
+
+    const entry = roomCreate.entries();
+    let roomNames: { roomName: string; player: string; roomId: string }[] = [];
+    for (const [_, b] of entry) {
+      roomNames.push({ roomName: b.roomName, player: b.player, roomId });
+    }
+    io.emit("dashboard", roomNames);
+  });
+
+  socket.on("getDashboard", () => {
+    const entry = roomCreate.entries();
+    let roomNames: { roomName: string; player: string; roomId: string }[] = [];
+    for (const [_, b] of entry) {
+      roomNames.push({
+        roomName: b.roomName,
+        player: b.player,
+        roomId: b.roomId,
+      });
+    }
+    io.emit("dashboard", roomNames);
+  });
+
+  socket.on("chooseRoom", (data: { roomId: string }) => {
+    const { roomId } = data;
+    const playerThatCreateRoom = roomCreate.get(roomId);
+
+    if (playerThatCreateRoom?.socket.id === socket.id) return;
+
+    if (playerThatCreateRoom) {
+      socket.join(roomId);
+      playerThatCreateRoom.socket.join(roomId);
+      io.to(roomId).emit("findRoom", { id: roomId });
+      roomCreate.delete(roomId);
+    }
+  });
+
+  socket.on("searchRoom", () => {
+    const entry = waitingPlayers.entries().next().value;
+
+    if (entry) {
+      const [waitingSocketId, waitingSocket] = entry;
+
+      if (waitingSocketId === socket.id) return;
+
+      waitingPlayers.delete(waitingSocketId);
+
+      const roomId = crypto.randomUUID().slice(0, 7);
+
+      socket.join(roomId);
+      waitingSocket.join(roomId);
+
+      io.to(roomId).emit("findRoom", { id: roomId });
+    } else {
+      waitingPlayers.set(socket.id, socket);
+    }
   });
 
   socket.on(
@@ -222,6 +289,8 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     console.log(`client disconnected: ${socket.id}`);
     const player = getPlayerBySocketId(socket.id);
+    waitingPlayers.delete(socket.id);
+    roomCreate.delete(socket.id);
     if (!player) return;
 
     const roomId = player.roomId;

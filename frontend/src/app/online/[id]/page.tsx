@@ -15,7 +15,7 @@ const Page = ({ params }: { params: Promise<{ id: string }> }) => {
   const { socket, sendChat } = useRoom(id);
   const [chatMessage, setChatMessage] = useState<ChatMessageType[]>([]);
   const [player, setPlayer] = useState<string>("");
-  const { getValue, setValue, clearValue } = useSessionStorage();
+  const { getValue } = useSessionStorage();
 
   const {
     resetScore,
