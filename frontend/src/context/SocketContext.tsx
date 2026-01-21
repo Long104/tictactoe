@@ -1,6 +1,7 @@
 "use client";
 import { socket } from "@/socket";
 import { useEffect, createContext, useState } from "react";
+import { useSessionStorage } from "@hook/useSessionStorage";
 
 interface Props {
   children: React.ReactNode;
@@ -18,10 +19,12 @@ export const SocketContext = createContext<SocketContextType>({
 
 const SocketProvider = ({ children }: Props) => {
   const [isConnected, setIsConnected] = useState(socket.connected || false);
+  const { getValue, setValue, clearValue } = useSessionStorage();
   useEffect(() => {
     function onConnect() {
       setIsConnected(true);
       console.log("Socket connected in context");
+      setValue("ttt_socket", socket.id ?? "no socket id");
     }
 
     function onDisconnect() {

@@ -5,8 +5,7 @@ import { useSessionStorage } from "@hook/useSessionStorage";
 export function useRoom(roomId: string) {
   const { socket } = useSocket();
   const { getValue, setValue, clearValue } = useSessionStorage();
-  const sessionId = getValue("ttt_sessionId") ?? "";
-  const joinRoom = () => {
+  const joinRoom = (sessionId: string) => {
     // set room ID in game state
     // handle joinroom and waiting
     // socket.emit("joinRoom", { roomId });

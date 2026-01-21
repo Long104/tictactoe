@@ -16,18 +16,7 @@ const Page = ({ params }: { params: Promise<{ id: string }> }) => {
   const [chatMessage, setChatMessage] = useState<ChatMessageType[]>([]);
   const [player, setPlayer] = useState<string>("");
   const { setValue, getValue, clearValue } = useSessionStorage();
-
-  const {
-    resetScore,
-    resetGame,
-    board,
-    roleScore,
-    gameCheckStatus,
-    gameStatus,
-    changeBoardPositionRole,
-    role,
-    turn,
-  } = useTicTacToe(id, player);
+  const [sessionId, setSessionId] = useState<string>("");
 
   useEffect(() => {
     // gen random number
@@ -36,7 +25,6 @@ const Page = ({ params }: { params: Promise<{ id: string }> }) => {
         .getRandomValues(new Uint32Array(1))[0]
         .toString()
         .slice(0, 5);
-      setPlayer(`guest${random}`);
       return `guest${random}`;
     }
     // set name if there is non in sessionStorage
@@ -50,12 +38,14 @@ const Page = ({ params }: { params: Promise<{ id: string }> }) => {
     }
 
     let sessionId = getValue("ttt_sessionId");
-
-    console.log("sessionid", sessionId);
+    console.log("sessionId", sessionId);
     if (!sessionId) {
       sessionId = crypto.randomUUID();
       setValue("ttt_sessionId", sessionId);
       console.log(getValue("ttt_sessionId"));
+      setSessionId(sessionId);
+    } else {
+      setSessionId(getValue("ttt_sessionId")!);
     }
 
     // Listen for room-specific events
@@ -64,10 +54,24 @@ const Page = ({ params }: { params: Promise<{ id: string }> }) => {
       console.log("Chat:", data);
     });
 
+    socket.emit("playWithFriend", { roomId: id });
+
     return () => {
       socket.off("roomChatUpdate");
     };
   }, [id]);
+
+  const {
+    resetScore,
+    resetGame,
+    board,
+    roleScore,
+    gameCheckStatus,
+    gameStatus,
+    changeBoardPositionRole,
+    role,
+    turn,
+  } = useTicTacToe(id, player, sessionId);
 
   // Check for win/draw conditions
   useEffect(() => {

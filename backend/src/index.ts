@@ -22,6 +22,7 @@ const roomCreate = new Map<
   string,
   { socket: Socket; roomName: string; player: string; roomId: string }
 >();
+const playWithFriend = new Map<string, Socket>();
 
 dotenv.config({
   path: process.env.NODE_ENV === "local" ? ".env.local" : ".env",
@@ -45,6 +46,24 @@ io.on("connection", (socket) => {
     const { name, sessionId } = data;
     socket.data.name = name;
     socket.data.sessionId = sessionId;
+  });
+
+  socket.on("joinRoom", (data: { roomId: string }) => {
+    const { roomId } = data;
+    socket.join(`room${roomId}`);
+  });
+
+  socket.on("playWithFriend", (data: { roomId: string }) => {
+    const { roomId } = data;
+
+    const existingPlayer = playWithFriend.get(roomId);
+    if (existingPlayer) {
+      socket.join(`room${roomId}`);
+      existingPlayer.join(`room${roomId}`);
+      io.to(`room${roomId}`).emit("findRoom", { id: roomId });
+      return;
+    }
+    playWithFriend.set(roomId, socket);
   });
 
   socket.on("createRoom", (data: { roomName: string; player: string }) => {
@@ -112,12 +131,8 @@ io.on("connection", (socket) => {
     "waitingRoom",
     async (data: { sessionId: string; roomId: string }) => {
       const { roomId, sessionId } = data;
-      console.log("roomId", roomId);
-      console.log("sessionId", sessionId);
 
       const existingPlayer = getPlayerBySessionId(sessionId);
-      console.log("existplayer", existingPlayer);
-      console.log("players:", players);
 
       if (existingPlayer && existingPlayer.roomId === roomId) {
         const room = getRoom(roomId);
@@ -128,7 +143,6 @@ io.on("connection", (socket) => {
           sessionBySocket.set(socket.id, sessionId);
 
           socket.emit("roleRestored", {
-            // TODO: add score later
             role: existingPlayer.role,
             board: room.board,
             currentTurn: room.currentTurn,
@@ -140,19 +154,16 @@ io.on("connection", (socket) => {
           addPlayerToRoom(existingPlayer);
 
           // roomPlayers.get("1")?.add("hello");
-          console.log(socket.id);
-          const sockets = await io.in(`room${roomId}`).fetchSockets();
+          // console.log(socket.id);
+          // const sockets = await io.in(`room${roomId}`).fetchSockets();
           return;
         }
       }
 
       // new player join
       const sockets = await io.in(`room${roomId}`).fetchSockets();
-      console.log(sockets);
       const playersInRoom = getPlayersInRoom(roomId);
       const roomSize = playersInRoom.length;
-
-      console.log(playersInRoom);
 
       if (roomSize === 0) {
         console.log("roomSize == 0");
@@ -174,16 +185,52 @@ io.on("connection", (socket) => {
         addPlayerToRoom(newPlayer);
         socket.join(`room${roomId}`);
 
+        console.log("room Player:", roomPlayers);
+        console.log("players: ", players);
+        console.log("rooms:", rooms);
+        console.log("session by socket:", sessionBySocket);
         socket.emit("waiting", "Waiting for opponent...");
       } else if (roomSize === 1) {
         console.log("roomSize == 1");
         // if second player - start game
-        const [player1Socket] = sockets;
-        const existingPlayer1 = getPlayerBySocketId(player1Socket.id);
-        if (!existingPlayer1) {
+
+        // check if there are people in the session and if they are disconnect
+        const playerSessionIds = roomPlayers.get(roomId);
+        if (!playerSessionIds || playerSessionIds.size === 0) {
           socket.emit("error", { message: "Invalid room state" });
           return;
         }
+
+        // get the existing player first one
+        const player1SessionId = Array.from(playerSessionIds)[0];
+        const existingPlayer1 = getPlayerBySessionId(player1SessionId);
+        console.log("check exisint player");
+        console.log("player1sessionId", player1SessionId);
+        console.log("exiting player", existingPlayer1);
+        console.log("room Player:", roomPlayers);
+        console.log("players: ", players);
+        console.log("rooms:", rooms);
+        console.log("session by socket:", sessionBySocket);
+
+        if (!existingPlayer1) {
+          socket.emit("error", { message: "player not found" });
+          return;
+        }
+
+        // check the actual socket for player 1 if it exist
+        const player1Socket = io.sockets.sockets.get(existingPlayer1.socketId);
+        if (!player1Socket) {
+          socket.emit("error", { message: "player 1 disconnected" });
+          return;
+        }
+
+        // const [player1Socket] = sockets;
+        // const existingPlayer1 = getPlayerBySocketId(player1Socket.id);
+        // if (!existingPlayer1) {
+        //   socket.emit("error", { message: "Invalid room state" });
+        //   return;
+        // }
+
         const newPlayer: PlayerState = {
           socketId: socket.id,
           sessionId,
@@ -218,6 +265,11 @@ io.on("connection", (socket) => {
           role: player2Role,
           currentTurn: "X",
         });
+
+        console.log("room Player:", roomPlayers);
+        console.log("players: ", players);
+        console.log("rooms:", rooms);
+        console.log("session by socket:", sessionBySocket);
       } else {
         // room full
         socket.emit("error", { message: "Room is full" });
@@ -239,6 +291,11 @@ io.on("connection", (socket) => {
     }) => {
       const { position, role, roomId, board, turn, score } = data;
       const player = getPlayerBySocketId(socket.id);
+      console.log("check invalid player");
+      console.log("room Player:", roomPlayers);
+      console.log("players: ", players);
+      console.log("rooms:", rooms);
+      console.log("session by socket:", sessionBySocket);
 
       if (!player || player.roomId !== roomId) {
         socket.emit("error", { message: "Invalid player" });
@@ -284,24 +341,19 @@ io.on("connection", (socket) => {
     socket.broadcast.emit("openChatUpdate", value);
   });
 
-  // ai hallucanate it didn't thought that removeplayerfromroom function remove
-  // player in players  also 😭 that's why line 53 doesn't work
   socket.on("disconnect", () => {
     console.log(`client disconnected: ${socket.id}`);
     const player = getPlayerBySocketId(socket.id);
     waitingPlayers.delete(socket.id);
     roomCreate.delete(socket.id);
     if (!player) return;
-
     const roomId = player.roomId;
     const sessionId = player.sessionId;
-
     setTimeout(async () => {
       const sockets = await io.in(`room${player.roomId}`).fetchSockets();
-
       if (sockets.length === 0) {
         rooms.delete(roomId);
-        roomPlayers.delete(roomId);
+        roomPlayers.delete(roomId); // Already deleted above, but keep for safety
         players.delete(sessionId);
         sessionBySocket.delete(socket.id);
       }

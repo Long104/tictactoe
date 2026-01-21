@@ -68,7 +68,6 @@ const page = () => {
         .getRandomValues(new Uint32Array(1))[0]
         .toString()
         .slice(0, 5);
-      setPlayer(`guest${random}`);
       return `guest${random}`;
     }
     // set name if there is non in sessionStorage
@@ -117,9 +116,9 @@ const page = () => {
   }
 
   function handlePlayWithFriend() {
-    openPlayWithFriend();
     const roomId = crypto.randomUUID().slice(0, 7);
     setPlayWithFriendRoomId(roomId);
+    openPlayWithFriend();
   }
 
   return (

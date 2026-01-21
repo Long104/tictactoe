@@ -2,7 +2,11 @@
 import { useEffect, useState } from "react";
 import { useRoom } from "@/hook/useRoom";
 
-export function useTicTacToe(roomId: string, player: string) {
+export function useTicTacToe(
+  roomId: string,
+  player: string,
+  sessionId: string,
+) {
   const [board, setBoard] = useState(Array(9).fill(""));
   const [roleScore, setRoleScore] = useState({ oScore: 0, xScore: 0 });
   const [gameStatus, setGameStatus] = useState("");
@@ -12,12 +16,17 @@ export function useTicTacToe(roomId: string, player: string) {
 
   useEffect(() => {
     // join room
-    joinRoom();
+    if (!sessionId) {
+      console.log("Waiting for sessionId...");
+      return;
+    }
+    console.log("Joining room with sessionId", sessionId);
+    joinRoom(sessionId);
 
     // listen for board updates
     socket.on("roomMoveUpdate", (data) => {
       const { position, currentMovePlayer, turn, board, role, score } = data;
-      if (currentMovePlayer !== player) setTurn(turn);
+      setTurn(turn);
       console.log("board", board);
       setBoard(board);
       setRoleScore(score);
@@ -57,7 +66,7 @@ export function useTicTacToe(roomId: string, player: string) {
       socket.off("waiting");
       socket.off("roleRestored");
     };
-  }, [roomId, player]);
+  }, [roomId, player, sessionId]);
 
   function resetGame() {
     setBoard(Array(9).fill(""));
@@ -122,7 +131,7 @@ export function useTicTacToe(roomId: string, player: string) {
     sendMove({
       position,
       currentMovePlayer: player,
-      role: role!,
+      role: role,
       roomId,
       board: newBoard,
       turn: role === "X" ? "O" : "X",
