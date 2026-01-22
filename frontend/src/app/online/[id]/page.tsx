@@ -19,6 +19,7 @@ const Page = ({ params }: { params: Promise<{ id: string }> }) => {
   const [sessionId, setSessionId] = useState<string>("");
 
   useEffect(() => {
+    socket.emit("playWithFriend", { roomId: id });
     // gen random number
     function generateRandomName() {
       const random = crypto
@@ -53,8 +54,6 @@ const Page = ({ params }: { params: Promise<{ id: string }> }) => {
       setChatMessage((prev: ChatMessageType[]) => [...prev, data]);
       console.log("Chat:", data);
     });
-
-    socket.emit("playWithFriend", { roomId: id });
 
     return () => {
       socket.off("roomChatUpdate");
