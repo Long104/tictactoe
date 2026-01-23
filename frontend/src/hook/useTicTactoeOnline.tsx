@@ -75,6 +75,7 @@ export function useTicTacToe(
 
   function resetScore() {
     setRoleScore({ oScore: 0, xScore: 0 });
+    socket.emit("resetScore", { roomId });
   }
 
   function gameCheckStatus(boardPosition: any) {

@@ -122,7 +122,7 @@ const page = () => {
   }
 
   return (
-    <div className="relative w-svw min-h-svh p-4 grid grid-cols-2 gap-4 place-items-center">
+    <div className="relative w-svw h-svh p-4 grid grid-rows-2 gap-4 place-items-center">
       {/* modal */}
       <Modal
         opened={openedCreateRoom}
@@ -151,28 +151,41 @@ const page = () => {
         title="Play with Friend"
       >
         <div>
-          <div className="flex gap-4">
-            <div>{`${process.env.NEXT_PUBLIC_FRONTEND_URL}/online/${playWithFriendRoomId}`}</div>
-            <CopyButton
-              value={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/online/${playWithFriendRoomId}`}
-              timeout={2000}
-            >
-              {({ copied, copy }) => (
-                <Tooltip
-                  label={copied ? "Copied" : "Copy"}
-                  withArrow
-                  position="right"
-                >
-                  <ActionIcon
-                    color={copied ? "teal" : "gray"}
-                    variant="subtle"
-                    onClick={copy}
+          <div className="flex flex-col gap-4">
+            <div className="flex">
+              <div>{`${process.env.NEXT_PUBLIC_FRONTEND_URL}/online/${playWithFriendRoomId}`}</div>
+              <CopyButton
+                value={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/online/${playWithFriendRoomId}`}
+                timeout={2000}
+              >
+                {({ copied, copy }) => (
+                  <Tooltip
+                    label={copied ? "Copied" : "Copy"}
+                    withArrow
+                    position="right"
                   >
-                    {copied ? <IconCheck size={16} /> : <IconCopy size={16} />}
-                  </ActionIcon>
-                </Tooltip>
-              )}
-            </CopyButton>
+                    <ActionIcon
+                      color={copied ? "teal" : "gray"}
+                      variant="subtle"
+                      onClick={copy}
+                    >
+                      {copied ? (
+                        <IconCheck size={16} />
+                      ) : (
+                        <IconCopy size={16} />
+                      )}
+                    </ActionIcon>
+                  </Tooltip>
+                )}
+              </CopyButton>
+            </div>
+            <Button variant="light" className="mb-2">
+              <Link
+                href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/online/${playWithFriendRoomId}`}
+              >
+                Go to Room
+              </Link>
+            </Button>
           </div>
         </div>
 
@@ -220,8 +233,8 @@ const page = () => {
       </Modal>
       {/*end modal */}
       {/* choose between online and offline */}
-      <div className="grid grid-rows-2 h-full w-full gap-4">
-        <div className="p-4 *:text-4xl w-full h-full bg-black/80 text-white mix-blend-multiply grid grid-rows-4 place-items-center rounded-lg">
+      <div className="grid grid-cols-2 h-full w-full gap-4">
+        <div className="p-4 *:text-[12px] *:sm:text-lg *:lg:text-3xl w-full h-full bg-black/80 text-white mix-blend-multiply grid grid-rows-4 place-items-center rounded-lg">
           <div
             onClick={playGameSearchOnline}
             className="p-6 hover:bg-gray-500 w-full h-full grid place-items-center rounded-lg cursor-pointer"
@@ -246,64 +259,64 @@ const page = () => {
             Create Room
           </div>
         </div>
-        <div className="bg-black/80 w-full h-full rounded-lg overflow-y-auto mix-blend-multiply text-white">
-          <Table>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>name</Table.Th>
-                <Table.Th>player</Table.Th>
-                <Table.Th>name</Table.Th>
-                {/* <Table.Th>time</Table.Th> */}
-                {/* <Table.Th>mode</Table.Th> */}
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {dashboardRoom.map((d, i) => (
-                <Table.Tr
-                  key={i}
-                  onClick={() => handleChooseRoom(d.roomId)}
-                  className="hover:bg-gray-500"
-                >
-                  <Table.Td>{d.roomName}</Table.Td>
-                  <Table.Td>{d.player}</Table.Td>
-                  <Table.Td>{d.roomId}</Table.Td>
-                  {/* <Table.Td>1+1 or 1</Table.Td> */}
-                  {/* <Table.Td>casual or rank</Table.Td> */}
-                </Table.Tr>
-              ))}
-            </Table.Tbody>
-          </Table>
+        <div className="flex flex-col justify-end bg-black/80 w-full h-full rounded-lg overflow-y-auto mix-blend-multiply text-white">
+          <div className="flex-1 overflow-y-auto p-2 items-self-end">
+            {openChatMessage && (
+              <div>
+                {openChatMessage.map((msg, index) => (
+                  <div
+                    key={index}
+                    className={`p-4 bg-gray-500 rounded-lg m-6 ${msg.from == player ? "justify-self-end" : "justify-self-start"}`}
+                  >
+                    {msg.from != player && (
+                      <span>
+                        {msg.from} {"> "}
+                      </span>
+                    )}
+                    <span>{msg.message}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          {/* open chat */}
+          <Textarea
+            // label="Input label"
+            // description="Input description"
+            onKeyDown={handleOpenChat}
+            placeholder="Chat with friend"
+            w={"100%"}
+            p={6}
+          />
         </div>
       </div>
-      <div className="flex flex-col justify-end w-full h-full bg-black/80 text-white mix-blend-multiply rounded-lg">
-        {/* open chat */}
-        <div className="flex-1 overflow-y-auto p-2 items-self-end">
-          {openChatMessage && (
-            <div>
-              {openChatMessage.map((msg, index) => (
-                <div
-                  key={index}
-                  className={`p-4 bg-gray-500 rounded-lg m-6 ${msg.from == player ? "justify-self-end" : "justify-self-start"}`}
-                >
-                  {msg.from != player && (
-                    <span>
-                      {msg.from} {"> "}
-                    </span>
-                  )}
-                  <span>{msg.message}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-        <Textarea
-          // label="Input label"
-          // description="Input description"
-          onKeyDown={handleOpenChat}
-          placeholder="Chat with friend"
-          w={"100%"}
-          p={6}
-        />
+      <div className="w-full h-full bg-black/80 text-white mix-blend-multiply rounded-lg">
+        <Table>
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th>name</Table.Th>
+              <Table.Th>player</Table.Th>
+              <Table.Th>name</Table.Th>
+              {/* <Table.Th>time</Table.Th> */}
+              {/* <Table.Th>mode</Table.Th> */}
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
+            {dashboardRoom.map((d, i) => (
+              <Table.Tr
+                key={i}
+                onClick={() => handleChooseRoom(d.roomId)}
+                className="hover:bg-gray-500"
+              >
+                <Table.Td>{d.roomName}</Table.Td>
+                <Table.Td>{d.player}</Table.Td>
+                <Table.Td>{d.roomId}</Table.Td>
+                {/* <Table.Td>1+1 or 1</Table.Td> */}
+                {/* <Table.Td>casual or rank</Table.Td> */}
+              </Table.Tr>
+            ))}
+          </Table.Tbody>
+        </Table>
       </div>
     </div>
   );

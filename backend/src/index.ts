@@ -53,17 +53,19 @@ io.on("connection", (socket) => {
     socket.join(`room${roomId}`);
   });
 
-  socket.on("playWithFriend", (data: { roomId: string }) => {
+  socket.on("resetScore", (data: { roomId: string }) => {
     const { roomId } = data;
-
-    const existingPlayer = playWithFriend.get(roomId);
-    if (existingPlayer) {
-      socket.join(`room${roomId}`);
-      existingPlayer.join(`room${roomId}`);
-      io.to(`room${roomId}`).emit("findRoom", { id: roomId });
-      return;
+    const room = rooms.get(roomId);
+    if (!room) {
+      // handle missing room (error, create new, default, etc.)
+      throw new Error(`Room ${roomId} not found`);
     }
-    playWithFriend.set(roomId, socket);
+    room.score = { oScore: 0, xScore: 0 };
+    rooms.set(roomId, room);
+
+    io.to(`room${roomId}`).emit("resetScoreRoomClient", {
+      score: room.score,
+    });
   });
 
   socket.on("createRoom", (data: { roomName: string; player: string }) => {
@@ -99,9 +101,9 @@ io.on("connection", (socket) => {
     if (playerThatCreateRoom?.socket.id === socket.id) return;
 
     if (playerThatCreateRoom) {
-      socket.join(roomId);
-      playerThatCreateRoom.socket.join(roomId);
-      io.to(roomId).emit("findRoom", { id: roomId });
+      socket.join(`room${roomId}`);
+      playerThatCreateRoom.socket.join(`room${roomId}`);
+      io.to(`room${roomId}`).emit("findRoom", { id: roomId });
       roomCreate.delete(roomId);
     }
   });
@@ -118,12 +120,29 @@ io.on("connection", (socket) => {
 
       const roomId = crypto.randomUUID().slice(0, 7);
 
-      socket.join(roomId);
-      waitingSocket.join(roomId);
+      socket.join(`room${roomId}`);
+      waitingSocket.join(`room${roomId}`);
 
-      io.to(roomId).emit("findRoom", { id: roomId });
+      io.to(`room${roomId}`).emit("findRoom", { id: roomId });
     } else {
       waitingPlayers.set(socket.id, socket);
+    }
+  });
+
+  socket.on("playWithFriend", (data: { roomId: string }) => {
+    const { roomId } = data;
+
+    const existingPlayer = playWithFriend.get(roomId);
+
+    if (existingPlayer?.id === socket.id) return;
+    if (existingPlayer) {
+      socket.join(`room${roomId}`);
+      existingPlayer.join(`room${roomId}`);
+      io.to(`room${roomId}`).emit("findRoom", { id: roomId });
+      playWithFriend.delete(roomId);
+      return;
+    } else {
+      playWithFriend.set(roomId, socket);
     }
   });
 
@@ -133,6 +152,29 @@ io.on("connection", (socket) => {
       const { roomId, sessionId } = data;
 
       const existingPlayer = getPlayerBySessionId(sessionId);
+
+      // ❌ If player is already in a different room, reject or cleanup first
+      if (existingPlayer && existingPlayer.roomId !== roomId) {
+        const oldRoomId = existingPlayer.roomId;
+
+        // Remove from old room
+        const oldRoomPlayers = roomPlayers.get(oldRoomId);
+        if (oldRoomPlayers) {
+          oldRoomPlayers.delete(sessionId);
+          if (oldRoomPlayers.size === 0) {
+            rooms.delete(oldRoomId);
+            roomPlayers.delete(oldRoomId);
+          }
+        }
+
+        // Cleanup old socket reference
+        const oldSocketId = existingPlayer.socketId;
+        sessionBySocket.delete(oldSocketId);
+
+        console.log(
+          `Player ${sessionId} moved from room ${oldRoomId} to ${roomId}`,
+        );
+      }
 
       if (existingPlayer && existingPlayer.roomId === roomId) {
         const room = getRoom(roomId);
@@ -343,12 +385,16 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     console.log(`client disconnected: ${socket.id}`);
+
     const player = getPlayerBySocketId(socket.id);
     waitingPlayers.delete(socket.id);
-    roomCreate.delete(socket.id);
+
+    roomCreate.delete(player?.roomId ?? "");
+
     if (!player) return;
     const roomId = player.roomId;
     const sessionId = player.sessionId;
+
     setTimeout(async () => {
       const sockets = await io.in(`room${player.roomId}`).fetchSockets();
       if (sockets.length === 0) {

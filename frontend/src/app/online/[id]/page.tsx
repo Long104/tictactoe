@@ -55,10 +55,15 @@ const Page = ({ params }: { params: Promise<{ id: string }> }) => {
       console.log("Chat:", data);
     });
 
+    socket.on("resetScoreRoomClient", () => {
+      resetScore();
+    });
+
     return () => {
       socket.off("roomChatUpdate");
+      socket.off("resetScoreRoomClient");
     };
-  }, [id]);
+  }, [id, player, sessionId]);
 
   const {
     resetScore,
@@ -121,7 +126,11 @@ const Page = ({ params }: { params: Promise<{ id: string }> }) => {
         {/* Game Board */}
         <div className="flex justify-center items-center relative rounded-lg h-full w-full flex-col">
           <div className="lg:hidden text-5xl py-2 px-6 rounded-lg my-2 bg-black/80 mix-blend-multiply text-white">
-            X : {roleScore.xScore}
+            {role == "X" ? (
+              <div>O : {roleScore.oScore}</div>
+            ) : (
+              <div>X : {roleScore.xScore}</div>
+            )}
           </div>
           <SimpleGrid
             cols={3}
@@ -148,7 +157,11 @@ const Page = ({ params }: { params: Promise<{ id: string }> }) => {
             ))}
           </SimpleGrid>
           <div className="lg:hidden text-5xl py-2 px-6 rounded-lg my-2 bg-black/80 mix-blend-multiply text-white">
-            O : {roleScore.oScore}
+            {role == "X" ? (
+              <div> X : {roleScore.xScore} </div>
+            ) : (
+              <div> O : {roleScore.oScore} </div>
+            )}
           </div>
           <button className="flex justify-center items-center lg:hidden text-white mix-blend-multiply font-bold cursor-pointer select-none p-6 mt-6 rounded-lg">
             {gameStatus ? (
@@ -178,7 +191,13 @@ const Page = ({ params }: { params: Promise<{ id: string }> }) => {
         {/* Score Panel */}
         <div className="hidden lg:block relative w-[18rem] h-[18rem] sm:w-[18rem] sm:h-[24rem] md:w-[20rem] md:h-[28rem] lg:w-[20rem] lg:h-[32rem] 2xl:w-[24rem] 2xl:h-[36rem] bg-black/80 rounded-xl text-white mix-blend-multiply">
           <div className="grid h-full w-full grid-rows-3 place-items-center">
-            <div className="text-8xl">X : {roleScore.xScore}</div>
+            <div className="text-8xl">
+              {role == "X" ? (
+                <div> O : {roleScore.oScore} </div>
+              ) : (
+                <div> X : {roleScore.xScore} </div>
+              )}
+            </div>
             <div className="h-full w-full flex justify-center items-center flex-col">
               <div className="flex flex-1 h-full w-full justify-center items-center bg-gray-600">
                 {gameStatus == "X"
@@ -212,7 +231,13 @@ const Page = ({ params }: { params: Promise<{ id: string }> }) => {
                 )}
               </button>
             </div>
-            <div className="text-8xl">O : {roleScore.oScore}</div>
+            <div className="text-8xl">
+              {role == "X" ? (
+                <div> X : {roleScore.xScore} </div>
+              ) : (
+                <div> O : {roleScore.oScore} </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

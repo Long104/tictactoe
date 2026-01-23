@@ -67,7 +67,7 @@ export default function RootLayout({
         <MantineProvider theme={theme}>
           <SocketProvider>
             {/* <Appshell> */}
-            <div className="relative overflow-hidden">
+            <div className="relative overflow-hidden h-full w-full">
               <div className="w-full h-full absolute inset-0 bg-gradient-to-r from-[#00b5ff] to-[#7b2eda] rounded-xl blur-sm opacity-95 animate-[pulse_7s_ease-in-out_infinite]"></div>
               <HomeButton />
               {children}
