@@ -179,13 +179,14 @@ const page = () => {
                 )}
               </CopyButton>
             </div>
-            <Button variant="light" className="mb-2">
-              <Link
-                href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/online/${playWithFriendRoomId}`}
-              >
+            <Link
+              href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/online/${playWithFriendRoomId}`}
+              className="cursor-pointer"
+            >
+              <Button variant="light" className="mb-2">
                 Go to Room
-              </Link>
-            </Button>
+              </Button>
+            </Link>
           </div>
         </div>
 
