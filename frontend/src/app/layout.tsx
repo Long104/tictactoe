@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import "@mantine/core/styles.css";
 import {
@@ -8,47 +8,49 @@ import {
   mantineHtmlProps,
   type MantineColorsTuple,
   createTheme,
-  Button,
 } from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
-import Appshell from "@/components/AppShell";
-import Link from "next/link";
 import SocketProvider from "@/context/SocketContext";
 import HomeButton from "@/components/HomeButton";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Tic-Tac-Toe App",
-  description: "create tic-tac-toe game",
+  title: "TicTacToe — Play Online",
+  description: "Modern tic-tac-toe game. Play online with friends or offline.",
 };
 
-const myColor: MantineColorsTuple = [
-  "#dffbff",
-  "#caf2ff",
-  "#99e2ff",
-  "#64d2ff",
-  "#3cc4fe",
-  "#23bcfe",
-  "#00b5ff",
-  "#00a1e4",
-  "#008fcd",
-  "#007cb6",
+const accentColor: MantineColorsTuple = [
+  "#e8fffe",
+  "#d0fefc",
+  "#a0f9f6",
+  "#6df4ef",
+  "#49f0ea",
+  "#35eee8",
+  "#29ede6",
+  "#1dd4cd",
+  "#0bbcb5",
+  "#00a39c",
 ];
 
 const theme = createTheme({
   colors: {
-    myColor,
+    accentColor,
   },
-  primaryColor: "myColor",
+  primaryColor: "accentColor",
+  fontFamily: "Inter, system-ui, sans-serif",
+  defaultRadius: "md",
+  components: {
+    Modal: {
+      defaultProps: {
+        centered: true,
+        overlayProps: { backgroundOpacity: 0.7, blur: 4 },
+      },
+    },
+  },
 });
 
 export default function RootLayout({
@@ -57,21 +59,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" {...mantineHtmlProps}>
+    <html lang="en" {...mantineHtmlProps} className={inter.variable}>
       <head>
-        <ColorSchemeScript />
+        <ColorSchemeScript defaultColorScheme="dark" />
       </head>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <MantineProvider theme={theme}>
+      <body>
+        <MantineProvider theme={theme} defaultColorScheme="dark">
           <SocketProvider>
-            {/* <Appshell> */}
-            <div className="relative overflow-hidden h-full w-full">
-              <div className="w-full h-full absolute inset-0 bg-gradient-to-r from-[#00b5ff] to-[#7b2eda] rounded-xl blur-sm opacity-95 animate-[pulse_7s_ease-in-out_infinite]"></div>
+            <div style={{ position: "relative", minHeight: "100dvh", width: "100%" }}>
               <HomeButton />
               {children}
-              {/* </Appshell> */}
             </div>
           </SocketProvider>
         </MantineProvider>

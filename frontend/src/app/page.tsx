@@ -1,40 +1,42 @@
 "use client";
-import {
-  Textarea,
-  Modal,
-  TextInput,
-  Button,
-  Table,
-  ActionIcon,
-  CopyButton,
-  Tooltip,
-} from "@mantine/core";
+import { Modal, TextInput } from "@mantine/core";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { socket } from "@/socket";
 import { useSessionStorage } from "@/hook/useSessionStorage";
 import { playGameSearchOnline, createRoom } from "@/lib/homePageFunction";
 import { useRouter } from "next/navigation";
 import { useDisclosure } from "@mantine/hooks";
 import QRCode from "react-qrcode-logo";
-import { IconCopy, IconCheck } from "@tabler/icons-react";
+import {
+  IconWorld,
+  IconDeviceGamepad2,
+  IconUsers,
+  IconPlus,
+  IconCopy,
+  IconCheck,
+  IconDoor,
+  IconMessageCircle,
+} from "@tabler/icons-react";
 
 type OpenChatMessageType = {
   from: string;
   message: string;
 };
 
-const page = () => {
+const Page = () => {
   const [openChatMessage, setOpenChatMessage] =
     useState<OpenChatMessageType[]>();
   const [player, setPlayer] = useState<string>("");
-  const { getValue, setValue, clearValue } = useSessionStorage();
+  const { getValue, setValue } = useSessionStorage();
   const [roomName, setRoomName] = useState<string>("");
   const router = useRouter();
   const [dashboardRoom, setDashboardRoom] = useState<
     { player: string; roomName: string; roomId: string }[]
   >([]);
   const [playWithFriendRoomId, setPlayWithFriendRoomId] = useState<string>("");
+  const [copied, setCopied] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
   const [openedCreateRoom, { open: openCreateRoom, close: closeCreateRoom }] =
     useDisclosure(false);
@@ -46,7 +48,8 @@ const page = () => {
   function handleOpenChat(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      const value = e.currentTarget.value;
+      const value = e.currentTarget.value.trim();
+      if (!value) return;
       setOpenChatMessage((prev) => [
         ...(prev || []),
         { from: player!, message: value },
@@ -57,12 +60,14 @@ const page = () => {
   }
 
   useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [openChatMessage]);
+
+  useEffect(() => {
     function findRoom(data: { id: number }) {
-      const { id } = data;
-      router.push(`/online/${id}`);
+      router.push(`/online/${data.id}`);
     }
 
-    // gen random number
     function generateRandomName() {
       const random = crypto
         .getRandomValues(new Uint32Array(1))[0]
@@ -70,30 +75,26 @@ const page = () => {
         .slice(0, 5);
       return `guest${random}`;
     }
-    // set name if there is non in sessionStorage
+
     const name = getValue("ttt_name");
     if (!name) {
-      setValue("ttt_name", generateRandomName());
-      setPlayer(generateRandomName());
+      const generated = generateRandomName();
+      setValue("ttt_name", generated);
+      setPlayer(generated);
     } else {
-      // if there is
       setPlayer(getValue("ttt_name")!);
     }
 
     let sessionId = getValue("ttt_sessionId");
-
-    console.log("sessionid", sessionId);
     if (!sessionId) {
       sessionId = crypto.randomUUID();
       setValue("ttt_sessionId", sessionId);
-      console.log(getValue("ttt_sessionId"));
     }
 
     socket.on("openChatUpdate", (value) => {
       setOpenChatMessage((prev) => [...(prev || []), value]);
     });
     socket.on("findRoom", findRoom);
-
     socket.on(
       "dashboard",
       (value: { player: string; roomName: string; roomId: string }[]) => {
@@ -107,7 +108,6 @@ const page = () => {
       socket.off("openChatUpdate");
       socket.off("findRoom");
       socket.off("dashboard");
-      socket.off("getDashboard");
     };
   }, []);
 
@@ -121,206 +121,374 @@ const page = () => {
     openPlayWithFriend();
   }
 
+  function copyLink() {
+    const url = `${process.env.NEXT_PUBLIC_FRONTEND_URL}/online/${playWithFriendRoomId}`;
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  const friendUrl = `${process.env.NEXT_PUBLIC_FRONTEND_URL}/online/${playWithFriendRoomId}`;
+
   return (
-    <div className="relative w-svw h-svh p-4 grid grid-rows-2 gap-4 place-items-center">
-      {/* modal */}
+    <>
+      {/* Create Room Modal */}
       <Modal
         opened={openedCreateRoom}
         onClose={closeCreateRoom}
-        title="Create Room Name"
+        title="Create a Room"
       >
-        <TextInput
-          label="Room Name"
-          description="Input your room name"
-          placeholder="play me bro room"
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-            setRoomName(e.currentTarget.value);
-          }}
-        />
-        <Button
-          mt={"xs"}
-          onClick={() => createRoom({ roomName, player }, closeCreateRoom)}
-          variant="light"
-        >
-          Create Your Room
-        </Button>
+        <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+          <TextInput
+            label="Room Name"
+            description="Give your room a name"
+            placeholder="My Epic Room"
+            onChange={(e) => setRoomName(e.currentTarget.value)}
+          />
+          <button
+            className="game-btn game-btn--primary"
+            onClick={() => createRoom({ roomName, player }, closeCreateRoom)}
+          >
+            <IconPlus size={18} />
+            Create Room
+          </button>
+        </div>
       </Modal>
+
+      {/* Play With Friend Modal */}
       <Modal
         opened={openedPlayWithFriend}
         onClose={closePlayWithFriend}
-        title="Play with Friend"
+        title="Invite a Friend"
       >
-        <div>
-          <div className="flex flex-col gap-4">
-            <div className="flex">
-              <div>{`${process.env.NEXT_PUBLIC_FRONTEND_URL}/online/${playWithFriendRoomId}`}</div>
-              <CopyButton
-                value={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/online/${playWithFriendRoomId}`}
-                timeout={2000}
-              >
-                {({ copied, copy }) => (
-                  <Tooltip
-                    label={copied ? "Copied" : "Copy"}
-                    withArrow
-                    position="right"
-                  >
-                    <ActionIcon
-                      color={copied ? "teal" : "gray"}
-                      variant="subtle"
-                      onClick={copy}
-                    >
-                      {copied ? (
-                        <IconCheck size={16} />
-                      ) : (
-                        <IconCopy size={16} />
-                      )}
-                    </ActionIcon>
-                  </Tooltip>
-                )}
-              </CopyButton>
-            </div>
-            <Link
-              href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/online/${playWithFriendRoomId}`}
-              className="cursor-pointer"
-            >
-              <Button variant="light" className="mb-2">
-                Go to Room
-              </Button>
-            </Link>
-          </div>
-        </div>
-
-        {/* for fun */}
-        <div
-          style={{
-            position: "relative",
-            width: 300,
-            height: 300,
-            borderRadius: 12,
-            overflow: "hidden",
-          }}
-        >
-          <img
-            src="/friren.jpg" // full background art
-            alt="QR background"
-            style={{
-              position: "absolute",
-              inset: 0,
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              opacity: 0.5,
-            }}
-          />
+        <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+          {/* URL row */}
           <div
             style={{
-              position: "absolute",
-              inset: 0,
-              width: "100%",
-              height: "100%",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              background: "var(--bg-cell)",
+              border: "1px solid var(--border)",
+              borderRadius: "10px",
+              padding: "0.5rem 0.75rem",
+              fontSize: "0.8rem",
+              color: "var(--text-secondary)",
+              wordBreak: "break-all",
             }}
           >
-            <QRCode
-              value={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/online/${playWithFriendRoomId}`}
-              size={280}
-              bgColor="transparent" // let the image show through
-              fgColor="#0e3a75" // blue dots like the bottom example
-              ecLevel="H"
-              qrStyle="dots" // or "fluid" for organic shapes
-              eyeColor="#1f2937" // darker eye color for contrast
-            />
+            <span style={{ flex: 1 }}>{friendUrl}</span>
+            <button
+              onClick={copyLink}
+              style={{
+                flexShrink: 0,
+                padding: "0.35rem 0.6rem",
+                borderRadius: "8px",
+                border: "1px solid var(--border)",
+                background: copied ? "var(--accent-dim)" : "var(--bg-panel)",
+                color: copied ? "var(--accent)" : "var(--text-secondary)",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.25rem",
+                fontSize: "0.75rem",
+                fontWeight: 600,
+                transition: "all 0.15s",
+              }}
+            >
+              {copied ? <IconCheck size={14} /> : <IconCopy size={14} />}
+              {copied ? "Copied!" : "Copy"}
+            </button>
           </div>
+
+          {/* QR Code */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.75rem" }}>
+            <div
+              style={{
+                position: "relative",
+                width: 200,
+                height: 200,
+                borderRadius: 12,
+                overflow: "hidden",
+                background: "#fff",
+                padding: "8px",
+              }}
+            >
+              <QRCode
+                value={friendUrl}
+                size={184}
+                bgColor="#ffffff"
+                fgColor="#0d0f14"
+                ecLevel="H"
+                qrStyle="dots"
+              />
+            </div>
+            <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", margin: 0 }}>
+              Scan to join the room
+            </p>
+          </div>
+
+          <Link href={friendUrl} style={{ textDecoration: "none" }}>
+            <button className="game-btn game-btn--primary" style={{ width: "100%" }}>
+              <IconDoor size={18} />
+              Go to Room
+            </button>
+          </Link>
         </div>
       </Modal>
-      {/*end modal */}
-      {/* choose between online and offline */}
-      <div className="grid grid-cols-2 h-full w-full gap-4">
-        <div className="p-4 *:text-[12px] *:sm:text-lg *:lg:text-3xl w-full h-full bg-black/80 text-white mix-blend-multiply grid grid-rows-4 place-items-center rounded-lg">
-          <div
-            onClick={playGameSearchOnline}
-            className="p-6 hover:bg-gray-500 w-full h-full grid place-items-center rounded-lg cursor-pointer"
+
+      {/* Main Page */}
+      <div
+        style={{
+          minHeight: "100dvh",
+          width: "100%",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          padding: "3rem 1rem 2rem",
+          gap: "2rem",
+        }}
+      >
+        {/* Hero */}
+        <div style={{ textAlign: "center", paddingTop: "1rem" }}>
+          <h1
+            style={{
+              fontSize: "clamp(2rem, 5vw, 3.5rem)",
+              fontWeight: 800,
+              letterSpacing: "-0.04em",
+              color: "var(--text-primary)",
+              margin: "0 0 0.5rem",
+            }}
           >
-            Play Online
-          </div>
-          <Link href={"offline"} className="w-full h-full cursor-pointer">
-            <div className="p-6 hover:bg-gray-500 w-full h-full grid place-items-center rounded-lg">
-              Play Offline
+            Tic-Tac-Toe
+          </h1>
+          <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", margin: 0 }}>
+            Signed in as{" "}
+            <strong style={{ color: "var(--accent)" }}>{player || "…"}</strong>
+          </p>
+        </div>
+
+        {/* Content grid: game modes | lobby/chat */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr",
+            gap: "1.25rem",
+            width: "100%",
+            maxWidth: "900px",
+          }}
+          className="home-layout"
+        >
+          <style>{`
+            @media (min-width: 700px) {
+              .home-layout {
+                grid-template-columns: 280px 1fr !important;
+              }
+            }
+          `}</style>
+
+          {/* Game Mode Panel */}
+          <div
+            className="panel"
+            style={{ padding: "1.25rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}
+          >
+            <div
+              style={{
+                fontSize: "0.7rem",
+                fontWeight: 700,
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                color: "var(--text-muted)",
+                marginBottom: "0.25rem",
+              }}
+            >
+              Play
             </div>
-          </Link>
+
+            <button
+              className="game-btn game-btn--primary"
+              onClick={playGameSearchOnline}
+            >
+              <IconWorld size={20} className="game-btn-icon" />
+              Play Online
+            </button>
+
+            <Link href="/offline" style={{ textDecoration: "none" }}>
+              <button className="game-btn" style={{ width: "100%" }}>
+                <IconDeviceGamepad2 size={20} className="game-btn-icon" />
+                Play Offline
+              </button>
+            </Link>
+
+            <button className="game-btn" onClick={handlePlayWithFriend}>
+              <IconUsers size={20} className="game-btn-icon" />
+              Play with Friend
+            </button>
+
+            <button className="game-btn" onClick={openCreateRoom}>
+              <IconPlus size={20} className="game-btn-icon" />
+              Create Room
+            </button>
+          </div>
+
+          {/* Right column: lobby + global chat */}
           <div
-            className="p-6 hover:bg-gray-500 w-full h-full grid place-items-center rounded-lg"
-            onClick={handlePlayWithFriend}
+            style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}
           >
-            Play Friend
-          </div>
-          <div
-            className="p-6 hover:bg-gray-500 w-full h-full grid place-items-center rounded-lg cursor-pointer"
-            onClick={openCreateRoom}
-          >
-            Create Room
-          </div>
-        </div>
-        <div className="flex flex-col justify-end bg-black/80 w-full h-full rounded-lg overflow-y-auto mix-blend-multiply text-white">
-          <div className="flex-1 overflow-y-auto p-2 items-self-end">
-            {openChatMessage && (
-              <div>
-                {openChatMessage.map((msg, index) => (
-                  <div
-                    key={index}
-                    className={`p-4 bg-gray-500 rounded-lg m-6 ${msg.from == player ? "justify-self-end" : "justify-self-start"}`}
-                  >
-                    {msg.from != player && (
-                      <span>
-                        {msg.from} {"> "}
-                      </span>
-                    )}
-                    <span>{msg.message}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          {/* open chat */}
-          <Textarea
-            // label="Input label"
-            // description="Input description"
-            onKeyDown={handleOpenChat}
-            placeholder="Chat with friend"
-            w={"100%"}
-            p={6}
-          />
-        </div>
-      </div>
-      <div className="w-full h-full bg-black/80 text-white mix-blend-multiply rounded-lg">
-        <Table>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>name</Table.Th>
-              <Table.Th>player</Table.Th>
-              <Table.Th>name</Table.Th>
-              {/* <Table.Th>time</Table.Th> */}
-              {/* <Table.Th>mode</Table.Th> */}
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {dashboardRoom.map((d, i) => (
-              <Table.Tr
-                key={i}
-                onClick={() => handleChooseRoom(d.roomId)}
-                className="hover:bg-gray-500"
+            {/* Open Rooms */}
+            <div className="panel" style={{ overflow: "hidden" }}>
+              <div
+                style={{
+                  padding: "0.75rem 1rem",
+                  borderBottom: "1px solid var(--border)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                }}
               >
-                <Table.Td>{d.roomName}</Table.Td>
-                <Table.Td>{d.player}</Table.Td>
-                <Table.Td>{d.roomId}</Table.Td>
-                {/* <Table.Td>1+1 or 1</Table.Td> */}
-                {/* <Table.Td>casual or rank</Table.Td> */}
-              </Table.Tr>
-            ))}
-          </Table.Tbody>
-        </Table>
+                <span
+                  style={{
+                    fontSize: "0.7rem",
+                    fontWeight: 700,
+                    letterSpacing: "0.1em",
+                    textTransform: "uppercase",
+                    color: "var(--text-muted)",
+                    flex: 1,
+                  }}
+                >
+                  Open Rooms
+                </span>
+                {dashboardRoom.length > 0 && (
+                  <span className="join-pill">{dashboardRoom.length} open</span>
+                )}
+              </div>
+              <div style={{ overflowX: "auto" }}>
+                {dashboardRoom.length === 0 ? (
+                  <p
+                    style={{
+                      fontSize: "0.8rem",
+                      color: "var(--text-muted)",
+                      textAlign: "center",
+                      padding: "1.5rem",
+                      margin: 0,
+                    }}
+                  >
+                    No open rooms right now
+                  </p>
+                ) : (
+                  <table className="dashboard-table">
+                    <thead>
+                      <tr>
+                        <th>Room</th>
+                        <th>Host</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {dashboardRoom.map((d, i) => (
+                        <tr
+                          key={i}
+                          onClick={() => handleChooseRoom(d.roomId)}
+                          style={{ cursor: "pointer" }}
+                        >
+                          <td>{d.roomName}</td>
+                          <td>{d.player}</td>
+                          <td>
+                            <span className="join-pill">Join</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </div>
+
+            {/* Global Chat */}
+            <div
+              className="panel"
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                height: "240px",
+                overflow: "hidden",
+              }}
+            >
+              <div
+                style={{
+                  padding: "0.75rem 1rem",
+                  borderBottom: "1px solid var(--border)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  fontSize: "0.7rem",
+                  fontWeight: 700,
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                  color: "var(--text-muted)",
+                }}
+              >
+                <IconMessageCircle size={14} />
+                Global Chat
+              </div>
+              <div className="chat-messages">
+                {!openChatMessage || openChatMessage.length === 0 ? (
+                  <p
+                    style={{
+                      fontSize: "0.8rem",
+                      color: "var(--text-muted)",
+                      textAlign: "center",
+                      margin: "auto",
+                    }}
+                  >
+                    Start the conversation…
+                  </p>
+                ) : (
+                  openChatMessage.map((msg, index) => (
+                    <div
+                      key={index}
+                      className={`chat-bubble ${msg.from === player ? "chat-bubble--own" : "chat-bubble--other"}`}
+                    >
+                      {msg.from !== player && (
+                        <div className="chat-bubble__from">{msg.from}</div>
+                      )}
+                      {msg.message}
+                    </div>
+                  ))
+                )}
+                <div ref={chatEndRef} />
+              </div>
+              <div style={{ padding: "0.5rem", borderTop: "1px solid var(--border)" }}>
+                <textarea
+                  onKeyDown={handleOpenChat}
+                  placeholder="Chat with everyone…"
+                  rows={2}
+                  style={{
+                    width: "100%",
+                    background: "var(--bg-cell)",
+                    border: "1px solid var(--border)",
+                    borderRadius: "8px",
+                    color: "var(--text-primary)",
+                    fontSize: "0.875rem",
+                    padding: "0.5rem 0.75rem",
+                    resize: "none",
+                    fontFamily: "inherit",
+                    outline: "none",
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = "var(--accent)";
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = "var(--border)";
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
-export default page;
+export default Page;

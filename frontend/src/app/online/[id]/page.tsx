@@ -1,8 +1,8 @@
 "use client";
-import { SimpleGrid, Textarea } from "@mantine/core";
 import { useTicTacToe } from "@/hook/useTicTactoeOnline";
 import { useSessionStorage } from "@/hook/useSessionStorage";
-import { useState, use, useEffect } from "react";
+import { useSound } from "@/hook/useSound";
+import { useState, use, useEffect, useRef } from "react";
 import { useRoom } from "@/hook/useRoom";
 
 type ChatMessageType = {
@@ -10,17 +10,36 @@ type ChatMessageType = {
   message: string;
 };
 
+const WIN_LINES = [
+  [0, 1, 2], [3, 4, 5], [6, 7, 8],
+  [0, 3, 6], [1, 4, 7], [2, 5, 8],
+  [0, 4, 8], [2, 4, 6],
+];
+
+function getWinningLine(board: string[]): number[] {
+  for (const [a, b, c] of WIN_LINES) {
+    if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+      return [a, b, c];
+    }
+  }
+  return [];
+}
+
 const Page = ({ params }: { params: Promise<{ id: string }> }) => {
   const { id } = use(params);
   const { socket, sendChat } = useRoom(id);
   const [chatMessage, setChatMessage] = useState<ChatMessageType[]>([]);
   const [player, setPlayer] = useState<string>("");
-  const { setValue, getValue, clearValue } = useSessionStorage();
+  const { setValue, getValue } = useSessionStorage();
   const [sessionId, setSessionId] = useState<string>("");
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  const chatInputRef = useRef<HTMLTextAreaElement>(null);
+  const prevBoardRef = useRef<string[]>([]);
+  const { playMove, playOpponentMove, playWin, playDraw } = useSound();
 
   useEffect(() => {
     socket.emit("playWithFriend", { roomId: id });
-    // gen random number
+
     function generateRandomName() {
       const random = crypto
         .getRandomValues(new Uint32Array(1))[0]
@@ -28,31 +47,27 @@ const Page = ({ params }: { params: Promise<{ id: string }> }) => {
         .slice(0, 5);
       return `guest${random}`;
     }
-    // set name if there is non in sessionStorage
+
     const name = getValue("ttt_name");
     if (!name) {
-      setValue("ttt_name", generateRandomName());
-      setPlayer(generateRandomName());
+      const generated = generateRandomName();
+      setValue("ttt_name", generated);
+      setPlayer(generated);
     } else {
-      // if there is
       setPlayer(getValue("ttt_name")!);
     }
 
-    let sessionId = getValue("ttt_sessionId");
-    console.log("sessionId", sessionId);
-    if (!sessionId) {
-      sessionId = crypto.randomUUID();
-      setValue("ttt_sessionId", sessionId);
-      console.log(getValue("ttt_sessionId"));
-      setSessionId(sessionId);
+    let sid = getValue("ttt_sessionId");
+    if (!sid) {
+      sid = crypto.randomUUID();
+      setValue("ttt_sessionId", sid);
+      setSessionId(sid);
     } else {
       setSessionId(getValue("ttt_sessionId")!);
     }
 
-    // Listen for room-specific events
     socket.on("roomChatUpdate", (data: ChatMessageType) => {
-      setChatMessage((prev: ChatMessageType[]) => [...prev, data]);
-      console.log("Chat:", data);
+      setChatMessage((prev) => [...prev, data]);
     });
 
     socket.on("resetScoreRoomClient", () => {
@@ -63,7 +78,7 @@ const Page = ({ params }: { params: Promise<{ id: string }> }) => {
       socket.off("roomChatUpdate");
       socket.off("resetScoreRoomClient");
     };
-  }, [id, player, sessionId]);
+  }, [id]);
 
   const {
     resetScore,
@@ -77,9 +92,37 @@ const Page = ({ params }: { params: Promise<{ id: string }> }) => {
     turn,
   } = useTicTacToe(id, player, sessionId);
 
-  // Check for win/draw conditions
+  // Scroll chat to bottom on new messages
   useEffect(() => {
-    if (board.some((cell) => cell !== null)) {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessage]);
+
+  // Sound on board changes
+  useEffect(() => {
+    const prev = prevBoardRef.current;
+    if (prev.length === 0) {
+      prevBoardRef.current = [...board];
+      return;
+    }
+    for (let i = 0; i < board.length; i++) {
+      if (prev[i] !== board[i] && board[i] !== "") {
+        if (board[i] === role) playMove();
+        else playOpponentMove();
+        break;
+      }
+    }
+    prevBoardRef.current = [...board];
+  }, [board]);
+
+  // Sound on game end
+  useEffect(() => {
+    if (gameStatus === "draw") playDraw();
+    else if (gameStatus === "X" || gameStatus === "O") playWin();
+  }, [gameStatus]);
+
+  // Check win/draw
+  useEffect(() => {
+    if (board.some((cell) => cell !== null && cell !== "")) {
       gameCheckStatus(board);
     }
   }, [board]);
@@ -87,190 +130,338 @@ const Page = ({ params }: { params: Promise<{ id: string }> }) => {
   function handleRoomChat(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      const value = e.currentTarget.value;
+      const value = e.currentTarget.value.trim();
+      if (!value) return;
       sendChat(player, value);
       e.currentTarget.value = "";
     }
   }
+
+  const isGameOver = gameStatus !== "";
+  const winningLine = isGameOver && gameStatus !== "draw" ? getWinningLine(board) : [];
+
+  const resultText =
+    gameStatus === "draw"
+      ? "It's a Draw!"
+      : gameStatus === role
+        ? "You Win! 🎉"
+        : gameStatus
+          ? "You Lose!"
+          : "";
+
+  const resultClass =
+    gameStatus === "draw"
+      ? "result-text result-text--draw"
+      : gameStatus === role
+        ? `result-text result-text--${role?.toLowerCase()}`
+        : "result-text result-text--draw";
+
+  const isMyTurn = turn === role;
+
   return (
-    <>
-      <div className="relative w-svw h-svh grid grid-cols-1 lg:grid-cols-[60%_40%] xl:grid-cols-3 place-items-center">
-        {/* Chat for large screens */}
-        <div className="flex flex-col justify-end max-xl:hidden relative w-[18rem] h-[18rem] sm:w-[18rem] sm:h-[24rem] md:w-[20rem] md:h-[28rem] lg:w-[20rem] lg:h-[32rem] 2xl:w-[24rem] 2xl:h-[36rem] bg-black/80 rounded-xl text-white mix-blend-multiply">
-          <div className="flex-1 overflow-y-auto p-2 items-self-end">
-            {chatMessage && (
-              <div>
-                {chatMessage.map((msg, index) => (
-                  <div
-                    key={index}
-                    className={`p-4 bg-gray-500 rounded-lg mb-6 ${msg.from == player ? "justify-self-end" : "justify-self-start"}`}
-                  >
-                    {msg.from != player && (
-                      <span>
-                        {msg.from} {"> "}
-                      </span>
-                    )}
-                    {msg.message}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          <Textarea
-            placeholder="Chat with friend"
-            w={"100%"}
-            onKeyDown={handleRoomChat}
-            className="p-4"
-          />
-        </div>
-        {/* Game Board */}
-        <div className="flex justify-center items-center relative rounded-lg h-full w-full flex-col">
-          <div className="lg:hidden text-5xl py-2 px-6 rounded-lg my-2 bg-black/80 mix-blend-multiply text-white">
-            {role == "X" ? (
-              <div>O : {roleScore.oScore}</div>
-            ) : (
-              <div>X : {roleScore.xScore}</div>
-            )}
-          </div>
-          <SimpleGrid
-            cols={3}
-            spacing={"sm"}
-            className="auto-rows-fr w-[18rem] h-[18rem] sm:w-sm sm:h-[24rem] md:w-md md:h-[28rem] lg:w-lg lg:h-[32rem] 2xl:w-[36rem] 2xl:h-[36rem]"
+    <div
+      style={{
+        minHeight: "100dvh",
+        width: "100%",
+        display: "grid",
+        gridTemplateColumns: "1fr",
+        gridTemplateRows: "auto 1fr auto",
+        padding: "4.5rem 1rem 1.5rem",
+        gap: "1.25rem",
+        maxWidth: "1200px",
+        margin: "0 auto",
+      }}
+    >
+      {/* Header row */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "1rem",
+          flexWrap: "wrap",
+        }}
+      >
+        <h1
+          style={{
+            fontSize: "1rem",
+            fontWeight: 700,
+            color: "var(--text-secondary)",
+            margin: 0,
+            letterSpacing: "0.05em",
+            textTransform: "uppercase",
+          }}
+        >
+          Room · {id}
+        </h1>
+        {role && (
+          <span className={`status-badge status-badge--${role.toLowerCase()}`}>
+            You are {role}
+          </span>
+        )}
+      </div>
+
+      {/* Main content: chat | board | score */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr",
+          gap: "1.25rem",
+          alignItems: "start",
+        }}
+        className="online-layout"
+      >
+        <style>{`
+          @media (min-width: 900px) {
+            .online-layout {
+              grid-template-columns: 1fr auto 1fr !important;
+              align-items: center !important;
+            }
+          }
+        `}</style>
+
+        {/* Chat panel */}
+        <div
+          className="panel"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            height: "min(420px, 50dvh)",
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              padding: "0.75rem 1rem",
+              borderBottom: "1px solid var(--border)",
+              fontSize: "0.75rem",
+              fontWeight: 700,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              color: "var(--text-muted)",
+            }}
           >
-            {board.map((cellRole, index) => (
+            Chat
+          </div>
+          <div className="chat-messages">
+            {chatMessage.length === 0 && (
+              <p
+                style={{
+                  fontSize: "0.8rem",
+                  color: "var(--text-muted)",
+                  textAlign: "center",
+                  margin: "auto",
+                }}
+              >
+                No messages yet
+              </p>
+            )}
+            {chatMessage.map((msg, index) => (
               <div
                 key={index}
-                onClick={() => changeBoardPositionRole(index)}
-                className={`
-                  bg-black/80 mix-blend-multiply text-white h-full w-full rounded-xl flex items-center justify-center font-bold text-6xl sm:text-7xl lg:text-8xl xl:text-9xl 
-                  ${
-                    // Disable click if not my turn OR cell is already filled
-                    turn === role && cellRole === "" && gameStatus === ""
-                      ? "cursor-pointer hover:bg-gray-500"
-                      : "cursor-not-allowed pointer-events-none"
-                  }
-`}
+                className={`chat-bubble ${msg.from === player ? "chat-bubble--own" : "chat-bubble--other"}`}
               >
-                {cellRole}
-                {/* {board[index]} */}
+                {msg.from !== player && (
+                  <div className="chat-bubble__from">{msg.from}</div>
+                )}
+                {msg.message}
               </div>
             ))}
-          </SimpleGrid>
-          <div className="lg:hidden text-5xl py-2 px-6 rounded-lg my-2 bg-black/80 mix-blend-multiply text-white">
-            {role == "X" ? (
-              <div> X : {roleScore.xScore} </div>
-            ) : (
-              <div> O : {roleScore.oScore} </div>
-            )}
+            <div ref={chatEndRef} />
           </div>
-          <button className="flex justify-center items-center lg:hidden text-white mix-blend-multiply font-bold cursor-pointer select-none p-6 mt-6 rounded-lg">
-            {gameStatus ? (
-              <div className="flex *:m-4">
-                <div
-                  className="text-lg bg-black/80 p-4 rounded-lg text-center"
-                  onClick={resetGame}
-                >
-                  Play again
-                </div>
-                <div
-                  className="text-lg bg-black/80 p-4 rounded-lg text-center"
-                  onClick={resetScore}
-                >
-                  Reset score
-                </div>
-              </div>
-            ) : (
-              <div className="text-lg bg-black/80 p-4 rounded-lg">
-                {role
-                  ? `You are ${role} - ${turn === role ? "Your turn" : "Opponent's turn"}`
-                  : "Waiting for game to start..."}
-              </div>
-            )}
-          </button>
-        </div>
-        {/* Score Panel */}
-        <div className="hidden lg:block relative w-[18rem] h-[18rem] sm:w-[18rem] sm:h-[24rem] md:w-[20rem] md:h-[28rem] lg:w-[20rem] lg:h-[32rem] 2xl:w-[24rem] 2xl:h-[36rem] bg-black/80 rounded-xl text-white mix-blend-multiply">
-          <div className="grid h-full w-full grid-rows-3 place-items-center">
-            <div className="text-8xl">
-              {role == "X" ? (
-                <div> O : {roleScore.oScore} </div>
-              ) : (
-                <div> X : {roleScore.xScore} </div>
-              )}
-            </div>
-            <div className="h-full w-full flex justify-center items-center flex-col">
-              <div className="flex flex-1 h-full w-full justify-center items-center bg-gray-600">
-                {gameStatus == "X"
-                  ? "X won game"
-                  : gameStatus == "O"
-                    ? "O Wins!"
-                    : gameStatus == "draw"
-                      ? "The game is draw"
-                      : role
-                        ? `You are ${role} - ${turn === role ? "Your turn" : "Opponent's turn"}`
-                        : "Waiting for game to start..."}
-              </div>
-              <button className="font-bold block cursor-pointer select-none flex-1 bg-gray-500 h-full w-full">
-                {gameStatus ? (
-                  <div className="grid grid-cols-2 h-full w-full">
-                    <span
-                      className="hover:bg-black/80 w-full h-full grid place-items-center"
-                      onClick={resetGame}
-                    >
-                      Play again
-                    </span>
-                    <span
-                      className="hover:bg-black/80 w-full h-full grid place-items-center"
-                      onClick={resetScore}
-                    >
-                      resetScore
-                    </span>
-                  </div>
-                ) : (
-                  "You In game"
-                )}
-              </button>
-            </div>
-            <div className="text-8xl">
-              {role == "X" ? (
-                <div> X : {roleScore.xScore} </div>
-              ) : (
-                <div> O : {roleScore.oScore} </div>
-              )}
-            </div>
+          <div style={{ padding: "0.5rem", borderTop: "1px solid var(--border)" }}>
+            <textarea
+              ref={chatInputRef}
+              onKeyDown={handleRoomChat}
+              placeholder="Type a message, press Enter to send…"
+              rows={2}
+              style={{
+                width: "100%",
+                background: "var(--bg-cell)",
+                border: "1px solid var(--border)",
+                borderRadius: "8px",
+                color: "var(--text-primary)",
+                fontSize: "0.875rem",
+                padding: "0.5rem 0.75rem",
+                resize: "none",
+                fontFamily: "inherit",
+                outline: "none",
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = "var(--accent)";
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = "var(--border)";
+              }}
+            />
           </div>
         </div>
-      </div>
-      {/* Chat for small screens */}
-      <div className="relative flex justify-center col items-end h-full w-full p-4 xl:hidden">
-        <div className="flex flex-col justify-end w-[18rem] h-[18rem] sm:w-[24rem] sm:h-[24rem] md:w-[28rem] md:h-[28rem] lg:w-[32rem] lg:h-[32rem] 2xl:w-[36rem] 2xl:h-[36rem] p-4 xl:hidden bg-black/80 rounded-xl text-white mix-blend-multiply">
-          <div className="flex-1 overflow-y-auto p-2 items-self-end">
-            {chatMessage && (
-              <div>
-                {chatMessage.map((msg, index) => (
+
+        {/* Board */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "1rem",
+          }}
+        >
+          <div style={{ position: "relative", width: "min(340px, 90vw)" }}>
+            <div
+              className="board-grid"
+              style={{ width: "100%", aspectRatio: "1" }}
+            >
+              {board.map((cellRole, index) => {
+                const isMine = turn === role && !cellRole && !isGameOver;
+                return (
                   <div
                     key={index}
-                    className={`p-4 bg-gray-500 rounded-lg mb-6 ${msg.from == player ? "justify-self-end" : "justify-self-start"}`}
+                    onClick={() => isMine ? changeBoardPositionRole(index) : undefined}
+                    className={[
+                      "board-cell",
+                      cellRole ? "board-cell--filled" : "",
+                      cellRole === "X" ? "board-cell--x" : "",
+                      cellRole === "O" ? "board-cell--o" : "",
+                      !isMine && !cellRole ? "board-cell--disabled" : "",
+                      winningLine.includes(index)
+                        ? cellRole === "X"
+                          ? "board-cell--winning board-cell--x"
+                          : "board-cell--winning board-cell--o"
+                        : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
                   >
-                    {msg.from != player && (
-                      <span>
-                        {msg.from} {"> "}
-                      </span>
+                    {cellRole && (
+                      <span className="cell-symbol">{cellRole}</span>
                     )}
-                    {msg.message}
                   </div>
-                ))}
+                );
+              })}
+            </div>
+
+            {/* Result Overlay */}
+            {isGameOver && (
+              <div className="result-overlay">
+                <span className={resultClass}>{resultText}</span>
+                <div className="action-row" style={{ justifyContent: "center" }}>
+                  <button
+                    className="action-btn action-btn--accent"
+                    onClick={resetGame}
+                  >
+                    Play Again
+                  </button>
+                  <button className="action-btn" onClick={resetScore}>
+                    Reset Score
+                  </button>
+                </div>
               </div>
             )}
           </div>
-          <Textarea
-            placeholder="Chat with friend"
-            w={"100%"}
-            onKeyDown={handleRoomChat}
+
+          {/* Turn indicator */}
+          {!isGameOver && role && (
+            <div className="turn-indicator">
+              {isMyTurn ? (
+                <>
+                  <span className={`turn-dot turn-dot--${role.toLowerCase()}`} />
+                  <span>
+                    Your turn &mdash;{" "}
+                    <strong
+                      style={{
+                        color:
+                          role === "X" ? "var(--x-color)" : "var(--o-color)",
+                      }}
+                    >
+                      {role}
+                    </strong>
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span
+                    className="turn-dot"
+                    style={{ background: "var(--text-muted)", animationPlayState: "paused" }}
+                  />
+                  <span style={{ color: "var(--text-muted)" }}>
+                    Waiting for opponent…
+                  </span>
+                </>
+              )}
+            </div>
+          )}
+
+          {!role && (
+            <div className="turn-indicator">
+              <span className="turn-dot" />
+              <span style={{ color: "var(--text-muted)" }}>
+                Waiting for opponent to join…
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Score panel */}
+        <div
+          className="panel"
+          style={{
+            padding: "1.5rem 1rem",
+            display: "flex",
+            flexDirection: "column",
+            gap: "1rem",
+            alignItems: "center",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "0.7rem",
+              fontWeight: 700,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              color: "var(--text-muted)",
+              marginBottom: "0.5rem",
+            }}
+          >
+            Scoreboard
+          </div>
+
+          {/* Opponent score */}
+          <div
+            className={`score-badge score-badge--${role === "X" ? "o" : "x"}`}
+            style={{ width: "100%", maxWidth: "180px", alignItems: "center" }}
+          >
+            <span className="score-badge__label">
+              Opponent ({role === "X" ? "O" : "X"})
+            </span>
+            <span className="score-badge__number">
+              {role === "X" ? roleScore.oScore : roleScore.xScore}
+            </span>
+          </div>
+
+          <div
+            style={{
+              width: "100%",
+              maxWidth: "180px",
+              height: "1px",
+              background: "var(--border)",
+            }}
           />
+
+          {/* My score */}
+          <div
+            className={`score-badge score-badge--${role?.toLowerCase() ?? "x"}`}
+            style={{ width: "100%", maxWidth: "180px", alignItems: "center" }}
+          >
+            <span className="score-badge__label">
+              You ({role ?? "–"})
+            </span>
+            <span className="score-badge__number">
+              {role === "X" ? roleScore.xScore : roleScore.oScore}
+            </span>
+          </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
