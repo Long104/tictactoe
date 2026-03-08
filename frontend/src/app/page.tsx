@@ -268,26 +268,27 @@ const Page = () => {
           </p>
         </div>
 
-        {/* Content grid: game modes | lobby/chat */}
+        {/* Content grid: Game Modes | Open Rooms | Global Chat (3 equal columns) */}
         <div
           style={{
             display: "grid",
             gridTemplateColumns: "1fr",
             gap: "1.25rem",
             width: "100%",
-            maxWidth: "900px",
+            maxWidth: "1100px",
+            alignItems: "stretch",
           }}
           className="home-layout"
         >
           <style>{`
             @media (min-width: 700px) {
               .home-layout {
-                grid-template-columns: 280px 1fr !important;
+                grid-template-columns: 1fr 1fr 1fr !important;
               }
             }
           `}</style>
 
-          {/* Game Mode Panel */}
+          {/* Col 1 — Game Mode Panel */}
           <div
             className="panel"
             style={{ padding: "1.25rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}
@@ -331,158 +332,153 @@ const Page = () => {
             </button>
           </div>
 
-          {/* Right column: lobby + global chat */}
-          <div
-            style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}
-          >
-            {/* Open Rooms */}
-            <div className="panel" style={{ overflow: "hidden" }}>
-              <div
-                style={{
-                  padding: "0.75rem 1rem",
-                  borderBottom: "1px solid var(--border)",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.5rem",
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: "0.7rem",
-                    fontWeight: 700,
-                    letterSpacing: "0.1em",
-                    textTransform: "uppercase",
-                    color: "var(--text-muted)",
-                    flex: 1,
-                  }}
-                >
-                  Open Rooms
-                </span>
-                {dashboardRoom.length > 0 && (
-                  <span className="join-pill">{dashboardRoom.length} open</span>
-                )}
-              </div>
-              <div style={{ overflowX: "auto" }}>
-                {dashboardRoom.length === 0 ? (
-                  <p
-                    style={{
-                      fontSize: "0.8rem",
-                      color: "var(--text-muted)",
-                      textAlign: "center",
-                      padding: "1.5rem",
-                      margin: 0,
-                    }}
-                  >
-                    No open rooms right now
-                  </p>
-                ) : (
-                  <table className="dashboard-table">
-                    <thead>
-                      <tr>
-                        <th>Room</th>
-                        <th>Host</th>
-                        <th></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {dashboardRoom.map((d, i) => (
-                        <tr
-                          key={i}
-                          onClick={() => handleChooseRoom(d.roomId)}
-                          style={{ cursor: "pointer" }}
-                        >
-                          <td>{d.roomName}</td>
-                          <td>{d.player}</td>
-                          <td>
-                            <span className="join-pill">Join</span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-            </div>
-
-            {/* Global Chat */}
+          {/* Col 2 — Open Rooms */}
+          <div className="panel" style={{ overflow: "hidden", display: "flex", flexDirection: "column" }}>
             <div
-              className="panel"
               style={{
+                padding: "0.75rem 1rem",
+                borderBottom: "1px solid var(--border)",
                 display: "flex",
-                flexDirection: "column",
-                height: "240px",
-                overflow: "hidden",
+                alignItems: "center",
+                gap: "0.5rem",
               }}
             >
-              <div
+              <span
                 style={{
-                  padding: "0.75rem 1rem",
-                  borderBottom: "1px solid var(--border)",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.5rem",
                   fontSize: "0.7rem",
                   fontWeight: 700,
                   letterSpacing: "0.1em",
                   textTransform: "uppercase",
                   color: "var(--text-muted)",
+                  flex: 1,
                 }}
               >
-                <IconMessageCircle size={14} />
-                Global Chat
-              </div>
-              <div className="chat-messages">
-                {!openChatMessage || openChatMessage.length === 0 ? (
-                  <p
-                    style={{
-                      fontSize: "0.8rem",
-                      color: "var(--text-muted)",
-                      textAlign: "center",
-                      margin: "auto",
-                    }}
-                  >
-                    Start the conversation…
-                  </p>
-                ) : (
-                  openChatMessage.map((msg, index) => (
-                    <div
-                      key={index}
-                      className={`chat-bubble ${msg.from === player ? "chat-bubble--own" : "chat-bubble--other"}`}
-                    >
-                      {msg.from !== player && (
-                        <div className="chat-bubble__from">{msg.from}</div>
-                      )}
-                      {msg.message}
-                    </div>
-                  ))
-                )}
-                <div ref={chatEndRef} />
-              </div>
-              <div style={{ padding: "0.5rem", borderTop: "1px solid var(--border)" }}>
-                <textarea
-                  onKeyDown={handleOpenChat}
-                  placeholder="Chat with everyone…"
-                  rows={2}
+                Open Rooms
+              </span>
+              {dashboardRoom.length > 0 && (
+                <span className="join-pill">{dashboardRoom.length} open</span>
+              )}
+            </div>
+            <div style={{ overflowY: "auto", flex: 1 }}>
+              {dashboardRoom.length === 0 ? (
+                <p
                   style={{
-                    width: "100%",
-                    background: "var(--bg-cell)",
-                    border: "1px solid var(--border)",
-                    borderRadius: "8px",
-                    color: "var(--text-primary)",
-                    fontSize: "0.875rem",
-                    padding: "0.5rem 0.75rem",
-                    resize: "none",
-                    fontFamily: "inherit",
-                    outline: "none",
+                    fontSize: "0.8rem",
+                    color: "var(--text-muted)",
+                    textAlign: "center",
+                    padding: "1.5rem",
+                    margin: 0,
                   }}
-                  onFocus={(e) => {
-                    e.currentTarget.style.borderColor = "var(--accent)";
+                >
+                  No open rooms right now
+                </p>
+              ) : (
+                <table className="dashboard-table">
+                  <thead>
+                    <tr>
+                      <th>Room</th>
+                      <th>Host</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dashboardRoom.map((d, i) => (
+                      <tr
+                        key={i}
+                        onClick={() => handleChooseRoom(d.roomId)}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <td>{d.roomName}</td>
+                        <td>{d.player}</td>
+                        <td>
+                          <span className="join-pill">Join</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+
+          {/* Col 3 — Global Chat */}
+          <div
+            className="panel"
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+              minHeight: "300px",
+            }}
+          >
+            <div
+              style={{
+                padding: "0.75rem 1rem",
+                borderBottom: "1px solid var(--border)",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                fontSize: "0.7rem",
+                fontWeight: 700,
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                color: "var(--text-muted)",
+              }}
+            >
+              <IconMessageCircle size={14} />
+              Global Chat
+            </div>
+            <div className="chat-messages" style={{ flex: 1 }}>
+              {!openChatMessage || openChatMessage.length === 0 ? (
+                <p
+                  style={{
+                    fontSize: "0.8rem",
+                    color: "var(--text-muted)",
+                    textAlign: "center",
+                    margin: "auto",
                   }}
-                  onBlur={(e) => {
-                    e.currentTarget.style.borderColor = "var(--border)";
-                  }}
-                />
-              </div>
+                >
+                  Start the conversation…
+                </p>
+              ) : (
+                openChatMessage.map((msg, index) => (
+                  <div
+                    key={index}
+                    className={`chat-bubble ${msg.from === player ? "chat-bubble--own" : "chat-bubble--other"}`}
+                  >
+                    {msg.from !== player && (
+                      <div className="chat-bubble__from">{msg.from}</div>
+                    )}
+                    {msg.message}
+                  </div>
+                ))
+              )}
+              <div ref={chatEndRef} />
+            </div>
+            <div style={{ padding: "0.5rem", borderTop: "1px solid var(--border)" }}>
+              <textarea
+                onKeyDown={handleOpenChat}
+                placeholder="Chat with everyone…"
+                rows={2}
+                style={{
+                  width: "100%",
+                  background: "var(--bg-cell)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "8px",
+                  color: "var(--text-primary)",
+                  fontSize: "0.875rem",
+                  padding: "0.5rem 0.75rem",
+                  resize: "none",
+                  fontFamily: "inherit",
+                  outline: "none",
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = "var(--accent)";
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = "var(--border)";
+                }}
+              />
             </div>
           </div>
         </div>
