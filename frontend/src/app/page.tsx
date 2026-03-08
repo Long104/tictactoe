@@ -161,7 +161,9 @@ const Page = () => {
         onClose={closePlayWithFriend}
         title="Invite a Friend"
       >
-        <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+        <div
+          style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}
+        >
           {/* URL row */}
           <div
             style={{
@@ -202,7 +204,14 @@ const Page = () => {
           </div>
 
           {/* QR Code */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.75rem" }}>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: "0.75rem",
+            }}
+          >
             <div
               style={{
                 position: "relative",
@@ -223,13 +232,22 @@ const Page = () => {
                 qrStyle="dots"
               />
             </div>
-            <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", margin: 0 }}>
+            <p
+              style={{
+                fontSize: "0.75rem",
+                color: "var(--text-muted)",
+                margin: 0,
+              }}
+            >
               Scan to join the room
             </p>
           </div>
 
           <Link href={friendUrl} style={{ textDecoration: "none" }}>
-            <button className="game-btn game-btn--primary" style={{ width: "100%" }}>
+            <button
+              className="game-btn game-btn--primary"
+              style={{ width: "100%" }}
+            >
               <IconDoor size={18} />
               Go to Room
             </button>
@@ -262,7 +280,13 @@ const Page = () => {
           >
             Tic-Tac-Toe
           </h1>
-          <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", margin: 0 }}>
+          <p
+            style={{
+              color: "var(--text-muted)",
+              fontSize: "0.9rem",
+              margin: 0,
+            }}
+          >
             Signed in as{" "}
             <strong style={{ color: "var(--accent)" }}>{player || "…"}</strong>
           </p>
@@ -291,7 +315,12 @@ const Page = () => {
           {/* Col 1 — Game Mode Panel */}
           <div
             className="panel"
-            style={{ padding: "1.25rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}
+            style={{
+              padding: "1.25rem",
+              display: "flex",
+              flexDirection: "column",
+              gap: "0.75rem",
+            }}
           >
             <div
               style={{
@@ -333,7 +362,14 @@ const Page = () => {
           </div>
 
           {/* Col 2 — Open Rooms */}
-          <div className="panel" style={{ overflow: "hidden", display: "flex", flexDirection: "column" }}>
+          <div
+            className="panel"
+            style={{
+              overflow: "hidden",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
             <div
               style={{
                 padding: "0.75rem 1rem",
@@ -455,7 +491,12 @@ const Page = () => {
               )}
               <div ref={chatEndRef} />
             </div>
-            <div style={{ padding: "0.5rem", borderTop: "1px solid var(--border)" }}>
+            <div
+              style={{
+                padding: "0.5rem",
+                borderTop: "1px solid var(--border)",
+              }}
+            >
               <textarea
                 onKeyDown={handleOpenChat}
                 placeholder="Chat with everyone…"
