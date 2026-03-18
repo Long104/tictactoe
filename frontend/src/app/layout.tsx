@@ -9,8 +9,6 @@ import {
   type MantineColorsTuple,
   createTheme,
 } from "@mantine/core";
-import SocketProvider from "@/context/SocketContext";
-import HomeButton from "@/components/HomeButton";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -65,12 +63,9 @@ export default function RootLayout({
       </head>
       <body>
         <MantineProvider theme={theme} defaultColorScheme="dark">
-          <SocketProvider>
-            <div style={{ position: "relative", minHeight: "100dvh", width: "100%" }}>
-              <HomeButton />
-              {children}
-            </div>
-          </SocketProvider>
+          <div style={{ position: "relative", minHeight: "100dvh", width: "100%" }}>
+            {children}
+          </div>
         </MantineProvider>
       </body>
     </html>
