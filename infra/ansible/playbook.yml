@@ -1,0 +1,27 @@
+---
+- name: Setup Jenkins Server
+  hosts: jenkins
+  become: true
+
+  roles:
+    - common
+    - docker
+    - jenkins
+
+- name: Setup Monitoring Server
+  hosts: monitoring
+  become: true
+
+  roles:
+    - common
+    - docker
+    - monitoring
+
+- name: Configure Kubernetes Nodes
+  hosts: k8s-nodes
+  become: true
+
+  roles:
+    - common
+    - docker
+    - k8s

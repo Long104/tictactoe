@@ -1,0 +1,41 @@
+---
+- name: Common role
+  block:
+    - name: Update all packages
+      yum:
+        name: "*"
+        state: latest
+      when: ansible_os_family == "RedHat"
+
+    - name: Install basic packages
+      package:
+        name:
+          - git
+          - curl
+          - wget
+          - unzip
+          - python3-pip
+          - htop
+          - net-tools
+        state: present
+
+    - name: Set timezone
+      timezone:
+        name: UTC
+
+    - name: Disable SELinux
+      selinux:
+        state: disabled
+      when: ansible_os_family == "RedHat"
+
+    - name: Configure firewall rules
+      firewalld:
+        service: "{{ item }}"
+        permanent: yes
+        state: enabled
+      loop:
+        - http
+        - https
+        - ssh
+      when: ansible_os_family == "RedHat" and ansible_distribution == "Amazon"
+      ignore_errors: yes

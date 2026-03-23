@@ -1,8 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  // reactCompiler: false,
+  output: "standalone",
+  reactCompiler: false,
   experimental: {
     optimizePackageImports: ["@mantine/core", "@mantine/hooks"],
   },

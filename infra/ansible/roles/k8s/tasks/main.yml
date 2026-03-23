@@ -1,0 +1,92 @@
+---
+- name: Install kubectl
+  block:
+    - name: Download kubectl
+      get_url:
+        url: https://dl.k8s.io/release/v1.29.0/bin/linux/amd64/kubectl
+        dest: /usr/local/bin/kubectl
+        mode: '0755'
+
+- name: Install helm
+  block:
+    - name: Download helm
+      get_url:
+        url: https://get.helm.sh/helm-v3.14.0-linux-amd64.tar.gz
+        dest: /tmp/helm.tar.gz
+
+    - name: Extract helm
+      unarchive:
+        src: /tmp/helm.tar.gz
+        dest: /tmp
+        remote_src: yes
+
+    - name: Move helm binary
+      copy:
+        src: /tmp/linux-amd64/helm
+        dest: /usr/local/bin/helm
+        mode: '0755'
+        remote_src: yes
+
+    - name: Cleanup helm files
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /tmp/helm.tar.gz
+        - /tmp/linux-amd64
+
+- name: Install eksctl
+  block:
+    - name: Download eksctl
+      get_url:
+        url: https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_Linux_amd64.tar.gz
+        dest: /tmp/eksctl.tar.gz
+
+    - name: Extract eksctl
+      unarchive:
+        src: /tmp/eksctl.tar.gz
+        dest: /tmp
+        remote_src: yes
+
+    - name: Move eksctl binary
+      copy:
+        src: /tmp/eksctl
+        dest: /usr/local/bin/eksctl
+        mode: '0755'
+        remote_src: yes
+
+    - name: Cleanup eksctl files
+      file:
+        path: /tmp/eksctl.tar.gz
+        state: absent
+
+- name: Install AWS IAM Authenticator
+  block:
+    - name: Download AWS IAM Authenticator
+      get_url:
+        url: https://github.com/kubernetes-sigs/aws-iam-authenticator/releases/latest/download/aws-iam-authenticator
+        dest: /usr/local/bin/aws-iam-authenticator
+        mode: '0755'
+
+- name: Install yq for YAML processing
+  block:
+    - name: Download yq
+      get_url:
+        url: https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+        dest: /usr/local/bin/yq
+        mode: '0755'
+
+- name: Configure kubeconfig directory
+  file:
+    path: ~/.kube
+    state: directory
+    mode: '0755'
+
+- name: Create kubectl completion
+  blockinfile:
+    path: /etc/bashrc
+    marker: "# {mark} KUBECTL COMPLETION"
+    content: |
+      source <(kubectl completion bash)
+      alias k=kubectl
+      complete -o default -F __start_kubectl k

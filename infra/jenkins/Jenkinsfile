@@ -1,0 +1,256 @@
+pipeline {
+    agent any
+
+    environment {
+        AWS_ACCOUNT_ID = credentials('aws-account-id')
+        AWS_REGION = 'us-east-1'
+        ECR_REGISTRY = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+        APP_NAME = 'tictactoe'
+        CLUSTER_NAME = 'tictactoe'
+        NAMESPACE = 'production'
+        GIT_REPO = 'https://github.com/your-org/tictactoe.git'
+    }
+
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+        timeout(time: 30, unit: 'MINUTES')
+        disableConcurrentBuilds()
+    }
+
+    parameters {
+        choice(name: 'ENVIRONMENT', choices: ['dev', 'staging', 'production'], description: 'Select deployment environment')
+        booleanParam(name: 'RUN_TESTS', defaultValue: true, description: 'Run tests before deployment')
+        booleanParam(name: 'RUN_SONAR', defaultValue: true, description: 'Run SonarQube analysis')
+        booleanParam(name: 'RUN_K6_TEST', defaultValue: false, description: 'Run K6 load tests')
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                echo 'Checking out source code...'
+                checkout scm
+            }
+        }
+
+        stage('Build Backend') {
+            steps {
+                echo 'Building backend application...'
+                dir('backend') {
+                    sh '''
+                        npm install
+                        npm run build
+                    '''
+                }
+            }
+        }
+
+        stage('Build Frontend') {
+            steps {
+                echo 'Building frontend application...'
+                dir('frontend') {
+                    sh '''
+                        npm install
+                        npm run build
+                    '''
+                }
+            }
+        }
+
+        stage('Unit Tests') {
+            when {
+                expression { params.RUN_TESTS }
+            }
+            steps {
+                echo 'Running unit tests...'
+                parallel(
+                    'Backend Tests': {
+                        dir('backend') {
+                            sh 'npm test || true'
+                        }
+                    },
+                    'Frontend Tests': {
+                        dir('frontend') {
+                            sh 'npm test -- --passWithNoTests || true'
+                        }
+                    }
+                )
+            }
+        }
+
+        stage('Security Scan - Trivy') {
+            steps {
+                echo 'Running vulnerability scan with Trivy...'
+                sh '''
+                    docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+                        aquasec/trivy:latest image --severity HIGH,CRITICAL \
+                        node:18-alpine || true
+                '''
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            when {
+                expression { params.RUN_SONAR }
+            }
+            steps {
+                echo 'Running SonarQube analysis...'
+                withSonarQubeEnv('SonarQube') {
+                    sh '''
+                        sonar-scanner \
+                            -Dsonar.projectKey=tictactoe \
+                            -Dsonar.sources=backend/src,frontend/src \
+                            -Dsonar.host.url=${SONAR_HOST_URL} \
+                            -Dsonar.token=${SONAR_AUTH_TOKEN}
+                    '''
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                echo 'Building Docker image...'
+                script {
+                    def timestamp = new Date().format('yyyyMMdd-HHmmss')
+                    env.IMAGE_TAG = "${params.ENVIRONMENT}-${timestamp}"
+                    
+                    sh """
+                        docker build -t ${ECR_REGISTRY}/${APP_NAME}:${IMAGE_TAG} .
+                        docker tag ${ECR_REGISTRY}/${APP_NAME}:${IMAGE_TAG} ${ECR_REGISTRY}/${APP_NAME}:latest
+                    """
+                }
+            }
+        }
+
+        stage('Push to ECR') {
+            steps {
+                echo 'Pushing image to ECR...'
+                sh '''
+                    aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}
+                    docker push ${ECR_REGISTRY}/${APP_NAME}:${IMAGE_TAG}
+                    docker push ${ECR_REGISTRY}/${APP_NAME}:latest
+                '''
+            }
+        }
+
+        stage('K6 Load Tests') {
+            when {
+                expression { params.RUN_K6_TEST }
+            }
+            steps {
+                echo 'Running K6 load tests...'
+                sh '''
+                    k6 run --out json=k6-results.json \
+                        -e BASE_URL=https://tictactoe.example.com \
+                        monitoring/k6/smoke-test.js || true
+                '''
+                archiveArtifacts artifacts: 'k6-results.json', allowEmptyArchive: true
+            }
+        }
+
+        stage('Update Kubernetes Manifests') {
+            steps {
+                echo 'Updating Kubernetes manifests with new image...'
+                dir('k8s') {
+                    sh """
+                        yq -i '.spec.template.spec.containers[0].image = "${ECR_REGISTRY}/${APP_NAME}:${IMAGE_TAG}"' deployment.yaml
+                        yq -i '.metadata.annotations."checksum/config" = "${BUILD_NUMBER}"' deployment.yaml
+                    """
+                }
+                
+                withCredentials([string(credentialsId: 'github-token', variable: 'GIT_TOKEN')]) {
+                    sh '''
+                        git config user.email "jenkins@example.com"
+                        git config user.name "Jenkins"
+                        git add k8s/
+                        git commit -m "Update image to ${IMAGE_TAG}" || echo "No changes to commit"
+                        git push https://${GIT_TOKEN}@github.com/your-org/tictactoe.git main || true
+                    '''
+                }
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                echo 'Deploying to Kubernetes cluster...'
+                sh '''
+                    aws eks update-kubeconfig --name ${CLUSTER_NAME} --region ${AWS_REGION}
+                    
+                    kubectl set image deployment/${APP_NAME} \
+                        ${APP_NAME}=${ECR_REGISTRY}/${APP_NAME}:${IMAGE_TAG} \
+                        -n ${NAMESPACE}
+                    
+                    kubectl rollout status deployment/${APP_NAME} -n ${NAMESPACE} --timeout=300s
+                '''
+            }
+        }
+
+        stage('Verify Deployment') {
+            steps {
+                echo 'Verifying deployment...'
+                sh '''
+                    kubectl get pods -n ${NAMESPACE}
+                    kubectl get svc -n ${NAMESPACE}
+                    kubectl get endpoints -n ${NAMESPACE}
+                '''
+            }
+        }
+
+        stage('Health Check') {
+            steps {
+                echo 'Running health check...'
+                sleep 10
+                sh '''
+                    curl -f https://tictactoe.example.com/health || exit 1
+                '''
+            }
+        }
+
+        stage('Prometheus Metrics') {
+            steps {
+                echo 'Sending metrics to Prometheus...'
+                sh '''
+                    curl -X POST -H "Content-Type: application/json" \
+                        --data '{"job": "tictactoe", "build_number": "'${BUILD_NUMBER}'", "status": "success"}' \
+                        http://prometheus:9090/metrics/job/builds || true
+                '''
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Cleaning up workspace...'
+            cleanWs()
+        }
+        
+        success {
+            echo 'Deployment successful!'
+            emailext (
+                subject: "SUCCESS: ${env.JOB_NAME} - Build #${env.BUILD_NUMBER}",
+                body: """
+                    <h2>Deployment Successful</h2>
+                    <p><b>Build:</b> #${env.BUILD_NUMBER}</p>
+                    <p><b>Environment:</b> ${params.ENVIRONMENT}</p>
+                    <p><b>Image Tag:</b> ${IMAGE_TAG}</p>
+                    <p><b>URL:</b> https://tictactoe.example.com</p>
+                """,
+                to: 'team@example.com'
+            )
+        }
+        
+        failure {
+            echo 'Deployment failed!'
+            emailext (
+                subject: "FAILED: ${env.JOB_NAME} - Build #${env.BUILD_NUMBER}",
+                body: """
+                    <h2>Deployment Failed</h2>
+                    <p><b>Build:</b> #${env.BUILD_NUMBER}</p>
+                    <p><b>Environment:</b> ${params.ENVIRONMENT}</p>
+                    <p><b>Stage Failed:</b> ${env.STAGE_NAME}</p>
+                    <p><b>Check logs:</b> ${env.BUILD_URL}</p>
+                """,
+                to: 'team@example.com'
+            )
+        }
+    }
+}

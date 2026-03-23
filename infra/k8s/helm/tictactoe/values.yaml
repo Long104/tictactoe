@@ -1,0 +1,141 @@
+replicaCount: 2
+
+image:
+  backend:
+    repository: 123456789012.dkr.ecr.us-east-1.amazonaws.com/tictactoe-backend
+    tag: latest
+    pullPolicy: IfNotPresent
+  frontend:
+    repository: 123456789012.dkr.ecr.us-east-1.amazonaws.com/tictactoe-frontend
+    tag: latest
+    pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8080"
+  prometheus.io/path: "/metrics"
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+securityContext:
+  backend:
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+  frontend:
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+
+service:
+  backend:
+    type: ClusterIP
+    port: 80
+    targetPort: 8080
+  frontend:
+    type: ClusterIP
+    port: 80
+    targetPort: 3000
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+  hosts:
+    - host: tictactoe.example.com
+      paths:
+        - path: /api
+          pathType: Prefix
+          service: backend
+          port: 80
+        - path: /socket.io
+          pathType: Prefix
+          service: backend
+          port: 80
+        - path: /
+          pathType: Prefix
+          service: frontend
+          port: 80
+  tls:
+    - secretName: tictactoe-tls
+      hosts:
+        - tictactoe.example.com
+
+resources:
+  backend:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+  frontend:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 128Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchLabels:
+              app: tictactoe
+          topologyKey: kubernetes.io/hostname
+
+env:
+  backend:
+    - name: NODE_ENV
+      value: "production"
+    - name: PORT
+      value: "8080"
+    - name: REDIS_HOST
+      value: "redis"
+    - name: REDIS_PORT
+      value: "6379"
+  frontend:
+    - name: NEXT_PUBLIC_API_URL
+      value: "https://tictactoe.example.com"
+    - name: NODE_ENV
+      value: "production"
+
+monitoring:
+  enabled: true
+  prometheus:
+    scrape: true
+    port: 8080
+    path: /metrics

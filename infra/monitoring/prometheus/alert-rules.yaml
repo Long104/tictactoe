@@ -1,0 +1,98 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: tictactoe-alerts
+  namespace: monitoring
+spec:
+  groups:
+    - name: tictactoe.rules
+      rules:
+        - alert: HighErrorRate
+          expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.05
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "High error rate detected"
+            description: "Error rate is {{ $value }}% for {{ $labels.service }}"
+
+        - alert: HighLatency
+          expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High latency detected"
+            description: "P95 latency is {{ $value }}s"
+
+        - alert: HighMemoryUsage
+          expr: (container_memory_usage_bytes / container_spec_memory_limit_bytes) > 0.9
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High memory usage"
+            description: "Memory usage is {{ $value }}% for {{ $labels.pod }}"
+
+        - alert: HighCPUUsage
+          expr: (rate(container_cpu_usage_seconds_total[5m])) > 0.9
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High CPU usage"
+            description: "CPU usage is {{ $value }}% for {{ $labels.pod }}"
+
+        - alert: PodDown
+          expr: kube_pod_status_phase{phase="Running"} == 0
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Pod is down"
+            description: "Pod {{ $labels.namespace }}/{{ $labels.pod }} is down"
+
+        - alert: DeploymentReplicasMismatch
+          expr: kube_deployment_spec_replicas != kube_deployment_status_replicas_available
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Deployment replicas mismatch"
+            description: "Deployment {{ $labels.namespace }}/{{ $labels.deployment }} has {{ $value }} unavailable replicas"
+
+        - alert: PVCPending
+          expr: kube_persistentvolumeclaim_status_phase{phase="Pending"} == 1
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "PVC pending"
+            description: "PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} is pending"
+
+        - alert: ServiceEndpointDown
+          expr: kube_endpoint_address_available{endpoint="kubernetes"} == 0
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Service endpoint down"
+            description: "Service {{ $labels.service }} has no available endpoints"
+
+        - alert: JenkinsBuildFailed
+          expr: jenkins_builds_last_build_result{result="FAILURE"} == 1
+          for: 1m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Jenkins build failed"
+            description: "Jenkins build {{ $labels.job }} failed"
+
+        - alert: K6TestFailed
+          expr: k6_test_result == 0
+          for: 1m
+          labels:
+            severity: warning
+          annotations:
+            summary: "K6 load test failed"
+            description: "K6 test failed with threshold violations"

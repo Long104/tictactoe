@@ -1,0 +1,111 @@
+---
+- name: Install Java
+  package:
+    name:
+      - java-17-amazon-corretto
+    state: present
+
+- name: Add Jenkins repository
+  get_url:
+    url: https://pkg.jenkins.io/redhat-stable/jenkins.repo
+    dest: /etc/yum.repos.d/jenkins.repo
+    mode: '0644'
+
+- name: Import Jenkins key
+  rpm_key:
+    state: present
+    key: https://pkg.jenkins.io/redhat-stable/jenkins.io.key
+
+- name: Install Jenkins
+  package:
+    name: jenkins
+    state: present
+
+- name: Start Jenkins service
+  service:
+    name: jenkins
+    state: started
+    enabled: yes
+
+- name: Get initial admin password
+  shell: cat /var/lib/jenkins/secrets/initialAdminPassword
+  register: jenkins_initial_password
+  changed_when: false
+  failed_when: false
+
+- name: Install Jenkins CLI
+  get_url:
+    url: http://localhost:8080/jnlpJars/jenkins-cli.jar
+    dest: /opt/jenkins/jenkins-cli.jar
+    mode: '0644'
+  register: jenkins_cli_download
+  until: jenkins_cli_download is succeeded
+  retries: 10
+  delay: 5
+  changed_when: false
+
+- name: Install Jenkins plugins
+  jenkins_script:
+    url: http://localhost:8080
+    script: |
+      def pluginManager = Jenkins.instance.pluginManager
+      def neededPlugins = [
+        'git',
+        'workflow-aggregator',
+        'docker-workflow',
+        'pipeline-stage-view',
+        'blueocean',
+        'kubernetes',
+        'credentials-binding',
+        'sonar',
+        'prometheus'
+      ]
+      neededPlugins.each { plugin ->
+        if (!pluginManager.getPlugin(plugin)) {
+          println "Installing " + plugin
+          pluginManager.install(plugin, true).future.get()
+        }
+      }
+  ignore_errors: yes
+
+- name: Configure Jenkins security
+  jenkins_script:
+    url: http://localhost:8080
+    script: |
+      import jenkins.model.Jenkins
+      import hudson.security.SecurityRealm
+      import hudson.security.FullControlOnceLoggedInAuthorizationStrategy
+
+      def jenkins = Jenkins.instance
+      jenkins.setSecurityRealm(SecurityRealm.NONE)
+      jenkins.setAuthorizationStrategy(new FullControlOnceLoggedInAuthorizationStrategy())
+      jenkins.save()
+  ignore_errors: yes
+
+- name: Wait for Jenkins to be ready
+  uri:
+    url: http://localhost:8080/login
+    status_code: 200
+  register: jenkins_status
+  until: jenkins_status is succeeded
+  retries: 30
+  delay: 10
+
+- name: Create Jenkins directory for pipelines
+  file:
+    path: /opt/jenkins/pipelines
+    state: directory
+    mode: '0755'
+
+- name: Configure AWS CLI
+  block:
+    - name: Install AWS CLI
+      pip:
+        name: awscli
+        state: present
+
+    - name: Configure AWS credentials directory
+      file:
+        path: ~/.aws
+        state: directory
+        mode: '0755'
