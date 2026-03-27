@@ -1,27 +1,19 @@
 {
-  "name": "app",
-  "version": "1.0.50",
+  "name": "tictactoe-backend",
+  "version": "1.0.0",
+  "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "NODE_ENV=local bun run --watch src/index.ts",
-    "build": "bun build src/index.ts --outdir dist --minify",
-    "start": "bun run dist/index.js"
+    "dev": "wrangler dev",
+    "build": "esbuild --bundle --outfile=dist/index.js --format=esm --loader:.ts=ts --minify --external:*",
+    "deploy": "wrangler deploy"
   },
   "dependencies": {
-    "@socket.io/bun-engine": "^0.1.0",
-    "@socket.io/redis-adapter": "^8.3.0",
-    "dotenv": "^17.2.3",
-    "hono": "^4.11.3",
-    "ioredis": "^5.9.2",
-    "pino": "^10.2.0",
-    "socket.io": "^4.8.3"
+    "@hono/node-server": "^1.13.0",
+    "hono": "^4.11.3"
   },
   "devDependencies": {
-    "bun-types": "latest"
-  },
-  "module": "src/index.js",
-  "optionalDependencies": {
-    "bufferutil": "*",
-    "utf-8-validate": "*"
+    "@cloudflare/workers-types": "^4.20241127.0",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.7.2"
   }
 }

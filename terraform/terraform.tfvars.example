@@ -1,0 +1,7 @@
+render_owner_id = "your-render-owner-id"
+
+domain             = "pantorn.site"
+github_owner       = "Long104"
+github_repo        = "tictactoe"
+frontend_subdomain = "tttfrontend"
+backend_subdomain  = "tttbbackend"
