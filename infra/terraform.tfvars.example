@@ -1,0 +1,23 @@
+# Cloudflare
+cloudflare_api_token = "your-cloudflare-api-token"
+cloudflare_zone_id   = "your-cloudflare-zone-id"
+
+# Vercel
+vercel_api_token = "your-vercel-api-token"
+vercel_team_id   = ""
+
+# Render
+render_api_token = "your-render-api-key"
+render_owner_id  = "your-render-owner-id"
+
+# GitHub
+github_repo = "your-username/tictactoe"
+
+# Domain
+domain             = "pantorn.site"
+frontend_subdomain = "ttt-frontend"
+backend_subdomain  = "ttt-backend"
+
+# Render config
+render_region = "oregon"
+render_plan   = "starter"
