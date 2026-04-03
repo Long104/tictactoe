@@ -5,7 +5,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "NODE_ENV=local bun run --watch src/index.ts",
     "build": "bun build src/index.ts --outdir dist",
-    "start": "bun run dist/index.js"
+    "start": "bun run src/index.ts"
   },
   "dependencies": {
     "@socket.io/bun-engine": "^0.1.0",
