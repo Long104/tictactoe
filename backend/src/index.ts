@@ -30,7 +30,7 @@ dotenv.config({
 
 const io = new Server({
   cors: {
-    origin: process.env.BACKEND_URL,
+    origin: process.env.FRONTEND_URL,
     methods: ["GET", "POST"],
     credentials: true,
   },

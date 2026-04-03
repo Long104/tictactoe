@@ -9,8 +9,8 @@ resource "render_web_service" "backend" {
       auto_deploy      = true
       branch           = var.backend_branch
       repo_url         = "https://github.com/${var.github_repo}"
-      docker_context   = "backend"
-      docker_file_path = "Dockerfile"
+      context         = "./backend"
+      dockerfile_path = "./backend/Dockerfile"
     }
   }
 
