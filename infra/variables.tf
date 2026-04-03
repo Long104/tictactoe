@@ -58,13 +58,13 @@ variable "backend_subdomain" {
 variable "frontend_branch" {
   description = "Git branch for frontend deployments"
   type        = string
-  default     = "main"
+  default     = "infraVercelRender"
 }
 
 variable "backend_branch" {
   description = "Git branch for backend deployments"
   type        = string
-  default     = "main"
+  default     = "infraVercelRender"
 }
 
 variable "backend_port" {

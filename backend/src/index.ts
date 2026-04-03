@@ -411,7 +411,7 @@ const app = new Hono();
 app.use(
   "*",
   cors({
-    origin: process.env.BACKEND_URL ?? "localhost:3000",
+    origin: process.env.FRONTEND_URL ?? "localhost:3000",
     allowMethods: ["GET", "POST", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
     credentials: true,
@@ -424,7 +424,7 @@ app.get("/", (c) => c.text("Hono!"));
 const { websocket } = engine.handler();
 
 export default {
-  port: 8000,
+  port: process.env.PORT,
   idleTimeout: 30, // must be greater than the "pingInterval" option of the engine, which defaults to 25 seconds
 
   fetch(req: Request, server: Bun.Server<any>): Response | Promise<Response> {
@@ -435,7 +435,7 @@ export default {
         status: 204,
         headers: {
           "Access-Control-Allow-Origin":
-            process.env.BACKEND_URL ?? "localhost:3000",
+            process.env.FRONTEND_URL ?? "localhost:3000",
           "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
           "Access-Control-Allow-Headers": "Content-Type, Authorization",
           "Access-Control-Allow-Credentials": "true",

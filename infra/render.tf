@@ -10,7 +10,7 @@ resource "render_web_service" "backend" {
       branch           = var.backend_branch
       repo_url         = "https://github.com/${var.github_repo}"
       docker_context   = "backend"
-      docker_file_path = "backend/Dockerfile"
+      docker_file_path = "Dockerfile"
     }
   }
 
@@ -22,7 +22,7 @@ resource "render_web_service" "backend" {
       value = "production"
     },
     FRONTEND_URL = {
-      value = "https://${var.backend_subdomain}.${var.domain}"
+      value = "https://${var.frontend_subdomain}.${var.domain}"
     },
   }
 
