@@ -2,7 +2,7 @@ resource "render_web_service" "backend" {
   name          = "tictactoe-backend"
   plan          = var.render_plan
   region        = var.render_region
-  start_command = "bun run src/index.ts"
+  start_command = "bun run dist/index.js"
 
   runtime_source = {
     docker = {
